@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: Check if user is logged in
+    function isLoggedIn() {
+      return request.auth != null;
+    }
+
+    // Helper: Get user document
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Helper: Check if user is Super Admin
+    function isSuperAdmin() {
+      return isLoggedIn() && 
+        (getUserData().role == 'superAdmin' || getUserData().role == 'super_admin');
+    }
+
+    // Helper: Check if user belongs to a specific school
+    function belongsToSchool(schoolId) {
+      return isLoggedIn() && 
+        (getUserData().schoolId == schoolId || isSuperAdmin());
+    }
+
+    // Helper: Check if user is School Admin for a specific school
+    function isSchoolAdmin(schoolId) {
+      return isLoggedIn() && 
+        (getUserData().role == 'schoolAdmin' && getUserData().schoolId == schoolId || isSuperAdmin());
+    }
+
+    // ─── USERS COLLECTION ──────────────────────────────────────────────────
+    match /users/{userId} {
+      // Users can read/write their own profile; Super Admins can manage all profiles
+      allow read, write: if isLoggedIn() && (request.auth.uid == userId || isSuperAdmin());
+      // Allow unauthenticated check for login registration on-the-fly
+      allow create: if true;
+    }
+
+    // ─── SCHOOLS COLLECTION & SUBCOLLECTIONS ────────────────────────────────
+    match /schools/{schoolId} {
+      allow read: if isLoggedIn();
+      allow write: if isSuperAdmin();
+
+      // Scoped collections inside a school (classes, subjects, timetable, notices, etc.)
+      match /{allSubcollections}/{docId} {
+        allow read: if belongsToSchool(schoolId);
+        allow write: if isSchoolAdmin(schoolId);
+      }
+    }
+
+    // ─── ADMISSIONS COLLECTION (Top-Level) ──────────────────────────────────
+    match /admissions/{admissionId} {
+      // Anyone can submit an admission request
+      allow create: if true;
+      // Only Super Admins or school admins of the target school can read/write
+      allow read, write: if isLoggedIn() && (
+        isSuperAdmin() || 
+        isSchoolAdmin(resource.data.schoolId) || 
+        isSchoolAdmin(request.resource.data.schoolId)
+      );
+    }
+
+    // ─── SUPPORT TICKETS & CONVERSATIONS (Top-Level) ────────────────────────
+    match /parentSupportConversations/{convId} {
+      // Parents can read/write their own tickets; School Admins of the target school can manage
+      allow create: if isLoggedIn();
+      allow read, write: if isLoggedIn() && (
+        isSuperAdmin() ||
+        request.auth.uid == resource.data.parentId ||
+        request.auth.uid == request.resource.data.parentId ||
+        isSchoolAdmin(resource.data.schoolId) ||
+        isSchoolAdmin(request.resource.data.schoolId)
+      );
+    }
+
+    // ─── OTHER TOP-LEVEL COLLECTIONS ────────────────────────────────────────
+    match /demoRequests/{docId} {
+      allow create: if true;
+      allow read, write: if isSuperAdmin();
+    }
+
+    match /contactMessages/{docId} {
+      allow create: if true;
+      allow read, write: if isSuperAdmin();
+    }
+
+    match /systemLogs/{docId} {
+      allow read, write: if isSuperAdmin();
+    }
+
+    match /superAdmin/{docId} {
+      allow read, write: if isSuperAdmin();
+    }
+  }
+}
