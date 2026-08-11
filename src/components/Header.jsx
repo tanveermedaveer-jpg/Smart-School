@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, LogIn, Sun, Moon } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { Link } from 'react-router-dom';
 
 const Header = () => {
   const [branding, setBranding] = useState({
@@ -89,10 +90,10 @@ const Header = () => {
           </button>
 
           {/* Login Portal */}
-          <a href="/login" className="bg-black hover:bg-gray-900 text-white px-6 py-2.5 rounded-lg font-medium transition-all shadow-md hover:shadow-lg flex items-center space-x-2 border border-gray-800">
+          <Link to="/login" className="bg-black hover:bg-gray-900 text-white px-6 py-2.5 rounded-lg font-medium transition-all shadow-md hover:shadow-lg flex items-center space-x-2 border border-gray-800">
             <LogIn className="w-4 h-4" />
             <span>Login Portal</span>
-          </a>
+          </Link>
         </div>
       </div>
     </header>
