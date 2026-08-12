@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BookOpen } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -13,7 +13,34 @@ const LoginPage = () => {
   const [isLoginView, setIsLoginView] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { login, logout } = useAuth();
+  const { login, logout, user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      const role = normalizeRole(user.role);
+      let redirectRoute = '';
+      switch (role) {
+        case 'schoolAdmin':
+          redirectRoute = '/school-admin/dashboard';
+          break;
+        case 'teacher':
+          redirectRoute = '/teacher/dashboard';
+          break;
+        case 'student':
+          redirectRoute = '/student/dashboard';
+          break;
+        case 'parent':
+          redirectRoute = '/parent/dashboard';
+          break;
+        case 'superAdmin':
+          redirectRoute = '/super-admin/dashboard';
+          break;
+      }
+      if (redirectRoute) {
+        navigate(redirectRoute, { replace: true });
+      }
+    }
+  }, [user, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -23,21 +50,28 @@ const LoginPage = () => {
       const profile = await login(email.trim(), password);
       const role = normalizeRole(profile.role);
       
-      if (role === 'superAdmin' || role === 'super_admin') {
+      if (role === 'superAdmin') {
         toast.error('Access Denied: Super Admin must log in through the secure portal.');
         await logout();
         setIsLoading(false);
         return;
       }
       
-      if (profile.status && profile.status !== 'Active') {
-        if (role === 'schoolAdmin') {
-          toast.error('Your School Admin account is inactive. Please contact the Super Admin.');
-        } else {
-          toast.error('Your account is inactive.');
-        }
+      if (profile.status && profile.status.toString().trim().toLowerCase() === 'inactive') {
+        toast.error('This account is inactive. Please contact the administrator.');
+        await logout();
         setIsLoading(false);
         return;
+      }
+
+      if (role === 'schoolAdmin') {
+        if (!profile.schoolId || profile.schoolId.toString().trim() === '' || profile.schoolId === 'SYSTEM') {
+          console.error(`[LoginPage Error] School Admin ${profile.email} lacks valid schoolId:`, profile.schoolId);
+          toast.error('This School Admin account has no assigned school. Please contact the administrator.');
+          await logout();
+          setIsLoading(false);
+          return;
+        }
       }
 
       toast.success(`Welcome back, ${profile.name || 'User'}!`);
@@ -57,32 +91,19 @@ const LoginPage = () => {
         case 'parent':
           redirectRoute = '/parent/dashboard';
           break;
-        case 'superAdmin':
-        case 'super_admin':
-          redirectRoute = '/super-admin/dashboard';
-          break;
         default:
           toast.error('Invalid role assignment.');
+          await logout();
           setIsLoading(false);
           return;
       }
-      window.location.href = redirectRoute;
+      navigate(redirectRoute, { replace: true });
     } catch (err) {
       console.error('[LoginPage] Login error:', err);
-      const code = err?.code || '';
-      if (code === 'auth/user-not-found' || code === 'auth/invalid-credential') {
-        toast.error('Account not found or incorrect password.');
-      } else if (code === 'auth/wrong-password') {
-        toast.error('Incorrect password.');
-      } else if (code === 'auth/too-many-requests') {
-        toast.error('Too many attempts. Please try again later.');
+      if (err.isNetworkError) {
+        toast.error(err.message, { duration: 6000 });
       } else {
-        const msg = err.message || '';
-        if (msg.toLowerCase().includes('failed to fetch') || msg.toLowerCase().includes('fetch')) {
-          toast.error('Connection Error: Please run start-project.bat to start the backend server!', { duration: 6000 });
-        } else {
-          toast.error(msg || 'Login failed. Please try again.');
-        }
+        toast.error(err.message || 'Invalid email or password.');
       }
       setIsLoading(false);
     }
@@ -92,18 +113,18 @@ const LoginPage = () => {
     <form className="space-y-6" onSubmit={handleLogin}>
       <div>
         <label htmlFor="email" className="block text-xs font-bold text-gray-500 uppercase mb-1">
-          Email Address
+          Email / Roll Number
         </label>
         <div className="mt-1">
           <input 
             id="email" 
             name="email" 
-            type="email" 
+            type="text" 
             required 
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-greenAccent focus:border-transparent text-xs bg-gray-50 transition-colors" 
-            placeholder="Enter your email address" 
+            placeholder="Enter email or roll number" 
           />
         </div>
       </div>
@@ -228,7 +249,7 @@ const LoginPage = () => {
           {renderForm()}
           
           <p className="mt-6 text-center text-[10px] text-gray-400">
-            Use the email address registered with your account.
+            Use the email, username or roll number registered with your account.
           </p>
         </div>
 

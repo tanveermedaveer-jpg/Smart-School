@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShieldAlert, BookOpen } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -11,7 +11,13 @@ const SuperAdminLogin = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { login, logout } = useAuth();
+  const { login, logout, user, isSuperAdmin } = useAuth();
+
+  useEffect(() => {
+    if (user && isSuperAdmin) {
+      navigate('/super-admin/dashboard', { replace: true });
+    }
+  }, [user, isSuperAdmin, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -21,7 +27,7 @@ const SuperAdminLogin = () => {
       const profile = await login(email.trim(), password);
       const role = normalizeRole(profile.role);
       
-      if (role !== 'superAdmin' && role !== 'super_admin') {
+      if (role !== 'superAdmin') {
         toast.error('Access Denied: Only Super Admin is authorized to log in here.');
         await logout();
         setIsLoading(false);
@@ -32,11 +38,10 @@ const SuperAdminLogin = () => {
       navigate('/super-admin/dashboard', { replace: true });
     } catch (err) {
       console.error('[SuperAdminLogin] Login error:', err);
-      const msg = err.message || '';
-      if (msg.toLowerCase().includes('failed to fetch') || msg.toLowerCase().includes('fetch')) {
-        toast.error('Connection Error: Please run start-project.bat to start the backend server!', { duration: 6000 });
+      if (err.isNetworkError) {
+        toast.error(err.message, { duration: 6000 });
       } else {
-        toast.error(msg || 'Login failed. Please check your credentials.');
+        toast.error(err.message || 'Login failed. Please check your credentials.');
       }
       setIsLoading(false);
     }

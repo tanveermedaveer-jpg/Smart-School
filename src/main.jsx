@@ -48,7 +48,7 @@ try {
 
 // 2. Clear sessionStorage of old/demo data (keeping only authUser)
 try {
-  const keysToKeep = new Set(['authUser']);
+  const keysToKeep = new Set(['authUser', 'jwtToken', 'superAdminAuth', 'tempAuthUser']);
   const sessionKeys = Object.keys(sessionStorage);
   sessionKeys.forEach(key => {
     if (!keysToKeep.has(key)) {

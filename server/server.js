@@ -4,8 +4,20 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const dbManager = require('./database');
 
+function normalizeRole(role) {
+  if (!role) return '';
+  const r = role.toString().trim();
+  const lower = r.toLowerCase().replace(/[\s_-]/g, '');
+  if (lower === 'schooladmin') return 'schoolAdmin';
+  if (lower === 'superadmin') return 'superAdmin';
+  if (lower === 'teacher' || lower === 'faculty') return 'teacher';
+  if (lower === 'student') return 'student';
+  if (lower === 'parent') return 'parent';
+  return r;
+}
+
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = 5001;
 const JWT_SECRET = 'smart_school_jwt_secret_key_2026';
 
 app.use(cors());
@@ -72,8 +84,7 @@ app.post('/api/auth/login', (req, res) => {
     const uUsername = (u.username || '').toLowerCase();
     const uRoll = (u.rollNumber || '').toLowerCase();
     
-    // Normalize role string matching normalizeRole
-    const r = (u.role || '').toString().toLowerCase().replace(/[\s_]/g, '');
+    const r = normalizeRole(u.role);
     const isStudent = (r === 'student');
 
     return isStudent
@@ -82,7 +93,7 @@ app.post('/api/auth/login', (req, res) => {
   });
 
   if (!user) {
-    return res.status(401).json({ message: 'Account not found.' });
+    return res.status(401).json({ message: 'Invalid email or password' });
   }
 
   let isMatch = false;
@@ -97,18 +108,48 @@ app.post('/api/auth/login', (req, res) => {
     isMatch = (user.password === password);
   }
   if (!isMatch) {
-    return res.status(401).json({ message: 'Incorrect credentials.' });
+    return res.status(401).json({ message: 'Invalid email or password' });
+  }
+
+  const role = normalizeRole(user.role);
+
+  // Status check (Inactive check)
+  const status = (user.status || '').toString().trim().toLowerCase();
+  if (status === 'inactive') {
+    return res.status(403).json({ message: 'This account is inactive. Please contact the administrator.' });
+  }
+
+  // School Admin schoolId check
+  let schoolId = user.schoolId;
+  if (role === 'schoolAdmin') {
+    if (!schoolId || schoolId.toString().trim() === '' || schoolId === 'SYSTEM') {
+      console.error(`[Auth Error] School Admin ${user.email} has invalid or missing schoolId:`, schoolId);
+      return res.status(400).json({ message: 'School Admin account has no assigned School ID. Please contact the administrator.' });
+    }
+  } else if (role === 'superAdmin') {
+    schoolId = 'SYSTEM';
   }
 
   const token = jwt.sign(
-    { id: user.id, email: user.email, role: user.role, schoolId: user.schoolId },
+    { id: user.id, email: user.email, role, schoolId },
     JWT_SECRET,
     { expiresIn: '7d' }
   );
 
-  // Return token and user profile details (omit password for security)
   const { password: _, ...profile } = user;
-  res.json({ token, user: profile });
+  
+  res.json({
+    id: user.id,
+    email: user.email,
+    role,
+    schoolId,
+    token,
+    user: {
+      ...profile,
+      role,
+      schoolId
+    }
+  });
 });
 
 // ─── USERS ENDPOINTS ─────────────────────────────────────────────────────
@@ -118,6 +159,18 @@ app.get('/api/users/:userId', authenticateToken, (req, res) => {
   const user = db.users.find(u => u.id.toString() === req.params.userId.toString());
   if (!user) return res.status(404).json({ message: 'User not found' });
   
+  const userRole = normalizeRole(req.user.role);
+  if (userRole !== 'superAdmin' && req.user.id.toString() !== req.params.userId.toString()) {
+    if (userRole === 'schoolAdmin') {
+      const targetSchoolId = user.schoolId || user.school_id;
+      if (!targetSchoolId || targetSchoolId.toString() !== req.user.schoolId.toString()) {
+        return res.status(403).json({ message: 'Access Denied: You can only access users of your own school.' });
+      }
+    } else {
+      return res.status(403).json({ message: 'Access Denied: Unauthorized to access this user.' });
+    }
+  }
+
   const { password: _, ...profile } = user;
   res.json(profile);
 });
@@ -126,6 +179,22 @@ app.put('/api/users/:userId', authenticateToken, (req, res) => {
   const db = dbManager.readDb();
   const idx = db.users.findIndex(u => u.id.toString() === req.params.userId.toString());
   if (idx === -1) return res.status(404).json({ message: 'User not found' });
+
+  const targetUser = db.users[idx];
+  const userRole = normalizeRole(req.user.role);
+
+  // Authorization Check
+  if (userRole !== 'superAdmin' && req.user.id.toString() !== req.params.userId.toString()) {
+    // If not updating themselves, must be a School Admin of the same school
+    if (userRole === 'schoolAdmin') {
+      const targetSchoolId = targetUser.schoolId || targetUser.school_id;
+      if (!targetSchoolId || targetSchoolId.toString() !== req.user.schoolId.toString()) {
+        return res.status(403).json({ message: 'Access Denied: You can only update users of your own school.' });
+      }
+    } else {
+      return res.status(403).json({ message: 'Access Denied: Unauthorized to update this user.' });
+    }
+  }
 
   // Update fields
   const updatedUser = { ...db.users[idx], ...req.body };
@@ -151,6 +220,11 @@ app.get('/api/schools', authenticateToken, (req, res) => {
 });
 
 app.post('/api/schools', authenticateToken, (req, res) => {
+  const userRole = normalizeRole(req.user.role);
+  if (userRole !== 'superAdmin') {
+    return res.status(403).json({ message: 'Access Denied: Only Super Admin can create schools.' });
+  }
+
   const db = dbManager.readDb();
   const newSchool = { ...req.body };
   db.schools.push(newSchool);
@@ -159,6 +233,11 @@ app.post('/api/schools', authenticateToken, (req, res) => {
 });
 
 app.delete('/api/schools/:schoolId', authenticateToken, (req, res) => {
+  const userRole = normalizeRole(req.user.role);
+  if (userRole !== 'superAdmin') {
+    return res.status(403).json({ message: 'Access Denied: Only Super Admin can delete schools.' });
+  }
+
   const db = dbManager.readDb();
   const sid = req.params.schoolId;
 
@@ -174,16 +253,42 @@ app.delete('/api/schools/:schoolId', authenticateToken, (req, res) => {
 
 app.get('/api/collections/:key', authenticateToken, (req, res) => {
   const { key } = req.params;
-  const { schoolId } = req.query;
+  let schoolId = req.query.schoolId;
   
-  const items = dbManager.getCollection(key, schoolId);
+  const userRole = normalizeRole(req.user.role);
+  if (userRole !== 'superAdmin') {
+    schoolId = req.user.schoolId;
+  }
+  if (userRole !== 'superAdmin' && (!schoolId || schoolId === 'SYSTEM')) {
+    return res.status(403).json({ message: 'Access Denied: Missing school association.' });
+  }
+
+  let items = dbManager.getCollection(key, schoolId);
+  if (key === 'schoolAdminUsers' || key === 'users') {
+    items = items.map(u => {
+      const copy = { ...u };
+      delete copy.password;
+      delete copy.parentPassword;
+      return copy;
+    });
+  }
   res.json(items);
 });
 
 app.post('/api/collections/:key', authenticateToken, (req, res) => {
   const { key } = req.params;
-  const { schoolId } = req.query;
+  let schoolId = req.query.schoolId;
   
+  const userRole = normalizeRole(req.user.role);
+  if (userRole !== 'superAdmin') {
+    // Force the schoolId to be the user's schoolId
+    schoolId = req.user.schoolId;
+  }
+  
+  if (userRole !== 'superAdmin' && (!schoolId || schoolId === 'SYSTEM')) {
+    return res.status(403).json({ message: 'Access Denied: Missing school association.' });
+  }
+
   dbManager.saveCollection(key, schoolId, req.body);
   res.json({ message: 'Collection saved successfully.' });
 });

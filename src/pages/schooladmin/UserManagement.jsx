@@ -69,7 +69,7 @@ const UserManagement = () => {
     parentEmail: '',
     parentAddress: '',
     parentPhoto: '',
-    parentPassword: 'Parent123!'
+    parentPassword: ''
   };
 
   const [formData, setFormData] = useState(initialFormState);
@@ -83,6 +83,14 @@ const UserManagement = () => {
     loadData();
   }, []);
 
+  useEffect(() => {
+    setFormData({ ...initialFormState });
+    setSelectedClassType('');
+    setSelectedGroup('');
+    setSelectedSection('');
+    setEditingId(null);
+  }, [activeTab]);
+
   const loadData = () => {
     const allUsers = JSON.parse(localStorage.getItem('schoolAdminUsers') || '[]');
     setUsers(allUsers);
@@ -94,7 +102,7 @@ const UserManagement = () => {
     setSubjects(savedSubjects);
   };
 
-  const saveToLocal = (updatedUsers) => {
+  const saveToLocal = async (updatedUsers) => {
     // Ensure schoolId is always a string and role is lowercase on every save
     const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
     const schoolId = (authUser.schoolId || '').toString();
@@ -105,6 +113,13 @@ const UserManagement = () => {
     }));
     setUsers(normalized);
     localStorage.setItem('schoolAdminUsers', JSON.stringify(normalized));
+    // Push to backend so passwords are bcrypt-hashed and persisted immediately
+    try {
+      const { saveSchoolUsers } = await import('../../utils/db');
+      await saveSchoolUsers(schoolId, normalized);
+    } catch (err) {
+      console.error('[UserManagement] Failed to push users to backend:', err);
+    }
   };
 
   // Extract distinct class names (e.g. "Class 1", "Class 5", "Class 9")
@@ -155,7 +170,7 @@ const UserManagement = () => {
   };
 
   // Core submit handler
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
     const schoolId = authUser.schoolId || 'global';
@@ -167,7 +182,16 @@ const UserManagement = () => {
 
     if (editingId) {
       const existingUser = users.find(u => u.id === editingId);
-      const updatedData = { ...existingUser, ...formData, id: editingId, role: activeTab, schoolId };
+      
+      const formPayload = { ...formData };
+      if (!formPayload.password || formPayload.password.trim() === '') {
+        delete formPayload.password;
+      }
+      if (!formPayload.parentPassword || formPayload.parentPassword.trim() === '') {
+        delete formPayload.parentPassword;
+      }
+
+      const updatedData = { ...existingUser, ...formPayload, id: editingId, role: activeTab, schoolId };
       
       if (activeTab === 'student') {
         const rollNumber = (formData.rollNumber || '').trim();
@@ -194,14 +218,19 @@ const UserManagement = () => {
         // Sync changes back to parent user profile
         const updatedUsersList = users.map(u => {
           if (u.id?.toString() === existingUser.parentId?.toString()) {
-            return {
-              ...u,
+            const parentUpdate = {
               name: formData.parentName || u.name,
               relationship: formData.parentRelationship || u.relationship,
               phone: formData.parentPhone || u.phone,
               email: formData.parentEmail || u.email,
-              password: formData.parentPassword || u.password,
               photo: formData.parentPhoto || u.photo
+            };
+            if (formData.parentPassword && formData.parentPassword.trim() !== '') {
+              parentUpdate.password = formData.parentPassword;
+            }
+            return {
+              ...u,
+              ...parentUpdate
             };
           }
           return u;
@@ -209,10 +238,10 @@ const UserManagement = () => {
 
         const studentIdx = updatedUsersList.findIndex(u => u.id === editingId);
         updatedUsersList[studentIdx] = updatedData;
-        saveToLocal(updatedUsersList);
+        await saveToLocal(updatedUsersList);
       } else {
         const updated = users.map(u => u.id === editingId ? updatedData : u);
-        saveToLocal(updated);
+        await saveToLocal(updated);
       }
       
       toast.success(`${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} updated successfully`);
@@ -278,7 +307,7 @@ const UserManagement = () => {
             return u;
           });
           newUser.parentId = parentId;
-          saveToLocal([...updatedUsersList, newUser]);
+          await saveToLocal([...updatedUsersList, newUser]);
         } else {
           // Create New Parent
           const newParentId = Date.now() + 1;
@@ -299,14 +328,14 @@ const UserManagement = () => {
           };
 
           newUser.parentId = newParentId;
-          saveToLocal([...users, newUser, parentUser]);
+          await saveToLocal([...users, newUser, parentUser]);
         }
 
         generateMonthlyFees(newUserId);
         toast.success(`Student created successfully. Student ID: ${rollNumber}`);
       } else {
         // Normal Parent or Teacher
-        saveToLocal([...users, newUser]);
+        await saveToLocal([...users, newUser]);
         toast.success(`${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} created successfully`);
       }
       
@@ -315,9 +344,9 @@ const UserManagement = () => {
     }
   };
 
-  const handleStatusChange = (id, newStatus) => {
+  const handleStatusChange = async (id, newStatus) => {
     const updated = users.map(u => u.id === id ? { ...u, status: newStatus } : u);
-    saveToLocal(updated);
+    await saveToLocal(updated);
     toast.success(`User marked as ${newStatus}`);
     
     if (newStatus === 'Active') {
@@ -328,7 +357,7 @@ const UserManagement = () => {
     }
   };
 
-  const runCascadingDelete = (uid) => {
+  const runCascadingDelete = async (uid) => {
     // 1. Filter out user from the active state list and localStorage
     const updatedUsers = users.filter(u => u.id !== uid);
     
@@ -344,7 +373,7 @@ const UserManagement = () => {
       }
       return u;
     });
-    saveToLocal(fullyUpdatedUsers);
+    await saveToLocal(fullyUpdatedUsers);
 
     // 3. Cascade delete from global 'users' list as well
     const globalUsers = JSON.parse(localStorage.getItem('users') || '[]');
@@ -471,14 +500,14 @@ const UserManagement = () => {
     setIsResetModalOpen(true);
   };
 
-  const handleResetSubmit = (e) => {
+  const handleResetSubmit = async (e) => {
     e.preventDefault();
     if (!newTempPassword || newTempPassword.length < 8) {
       toast.error('Temporary password must be at least 8 characters');
       return;
     }
     const updatedUsers = users.map(u => u.id === resetUserId ? { ...u, password: newTempPassword, isTemporaryPassword: false } : u);
-    saveToLocal(updatedUsers);
+    await saveToLocal(updatedUsers);
     toast.success('Password reset successfully.');
     setIsResetModalOpen(false);
     setResetUserId(null);
@@ -495,7 +524,7 @@ const UserManagement = () => {
           populatedUser.parentRelationship = parent.relationship || 'Father';
           populatedUser.parentEmail = parent.email || '';
           populatedUser.parentPhone = parent.phone || '';
-          populatedUser.parentPassword = parent.password || '';
+          populatedUser.parentPassword = ''; // Never expose existing password hash into form
           populatedUser.parentPhoto = parent.photo || '';
         }
       }
@@ -523,17 +552,21 @@ const UserManagement = () => {
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingId(null);
+    setFormData({ ...initialFormState });
+    setSelectedClassType('');
+    setSelectedGroup('');
+    setSelectedSection('');
   };
 
   // Class Transfer Handler
-  const handleTransferSubmit = (e) => {
+  const handleTransferSubmit = async (e) => {
     e.preventDefault();
     if (!transferClassId) {
       toast.error('Please select a target class');
       return;
     }
     const updated = users.map(u => u.id === transferStudentId ? { ...u, classId: transferClassId } : u);
-    saveToLocal(updated);
+    await saveToLocal(updated);
     toast.success('Student transferred successfully. Historical academic marks and fees remain intact.');
     setIsTransferModalOpen(false);
     setTransferStudentId(null);
@@ -1003,7 +1036,7 @@ const UserManagement = () => {
               </button>
             </div>
             
-            <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+            <form key={`${activeTab}-${editingId || 'create'}`} onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[70vh] overflow-y-auto" autoComplete="off">
               
               {/* SECTION A: Basic Student or User Info */}
               <div className="space-y-4">
@@ -1082,7 +1115,14 @@ const UserManagement = () => {
                   )}
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Password</label>
-                    <PasswordInput required name="password" value={formData.password} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-greenAccent/20 focus:border-greenAccent outline-none bg-white" />
+                    <PasswordInput 
+                      required={!editingId} 
+                      name="password" 
+                      value={formData.password || ''} 
+                      onChange={handleInputChange} 
+                      autoComplete="new-password"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-greenAccent/20 focus:border-greenAccent outline-none bg-white" 
+                    />
                   </div>
                 </div>
 
@@ -1212,7 +1252,14 @@ const UserManagement = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Parent Login Password</label>
-                          <PasswordInput required name="parentPassword" value={formData.parentPassword || ''} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-greenAccent/20 focus:border-greenAccent outline-none bg-white" />
+                          <PasswordInput 
+                            required={false} 
+                            name="parentPassword" 
+                            value={formData.parentPassword || ''} 
+                            onChange={handleInputChange} 
+                            autoComplete="new-password"
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-greenAccent/20 focus:border-greenAccent outline-none bg-white" 
+                          />
                         </div>
                         <div>
                           <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Parent Photo (Optional)</label>
@@ -1235,7 +1282,7 @@ const UserManagement = () => {
                       </div>
 
                       {formData.parentMode === 'existing' ? (
-                        <div>
+                        <div key="existing-parent">
                           <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Select Parent</label>
                           <select
                             required
@@ -1251,7 +1298,7 @@ const UserManagement = () => {
                           </select>
                         </div>
                       ) : (
-                        <div className="space-y-4 bg-gray-50 p-4 border border-gray-200 rounded-2xl">
+                        <div key="new-parent" className="space-y-4 bg-gray-50 p-4 border border-gray-200 rounded-2xl">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Parent's Full Name</label>
@@ -1281,7 +1328,14 @@ const UserManagement = () => {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Parent Login Password</label>
-                              <PasswordInput required={formData.parentMode === 'new'} name="parentPassword" value={formData.parentPassword} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-greenAccent/20 focus:border-greenAccent outline-none bg-white" />
+                              <PasswordInput 
+                                required={!editingId && formData.parentMode === 'new'} 
+                                name="parentPassword" 
+                                value={formData.parentPassword || ''} 
+                                onChange={handleInputChange} 
+                                autoComplete="new-password"
+                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-greenAccent/20 focus:border-greenAccent outline-none bg-white" 
+                              />
                             </div>
                             <div>
                               <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Parent Photo (Optional)</label>

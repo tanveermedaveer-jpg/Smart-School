@@ -5,6 +5,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { normalizeRole } from '../utils/db';
 
 const AuthContext = createContext(null);
 
@@ -29,37 +30,63 @@ export function AuthProvider({ children }) {
       } catch (e) {
         sessionStorage.removeItem('jwtToken');
         sessionStorage.removeItem('authUser');
+        sessionStorage.removeItem('superAdminAuth');
       }
+    } else {
+      // If one of them is missing, clean up both to avoid half-logged-in states
+      sessionStorage.removeItem('jwtToken');
+      sessionStorage.removeItem('authUser');
+      sessionStorage.removeItem('superAdminAuth');
     }
     setLoading(false);
   }, []);
 
   const login = async (email, password) => {
-    const response = await fetch('http://localhost:5001/api/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ email: email.trim(), password })
-    });
+    let response;
+    try {
+      response = await fetch('http://localhost:5001/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email: email.trim(), password })
+      });
+    } catch (networkError) {
+      const err = new Error('Connection Error: Please run start-project.bat to start the backend server!');
+      err.isNetworkError = true;
+      throw err;
+    }
 
-    const data = await response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch (parseError) {
+      throw new Error('Server returned an invalid response. Please try again.');
+    }
+
     if (!response.ok) {
-      throw new Error(data.message || 'Login failed. Please check your credentials.');
+      const err = new Error(data.message || 'Login failed. Please check your credentials.');
+      err.status = response.status;
+      throw err;
     }
 
     const { token, user } = data;
+    const normalizedRoleName = normalizeRole(user.role);
+    const normalizedUser = {
+      ...user,
+      role: normalizedRoleName
+    };
     
     // Save credentials to session storage
     sessionStorage.setItem('jwtToken', token);
-    sessionStorage.setItem('authUser', JSON.stringify(user));
+    sessionStorage.setItem('authUser', JSON.stringify(normalizedUser));
     
-    if (user.role === 'superAdmin' || user.role === 'super_admin') {
+    if (normalizedRoleName === 'superAdmin') {
       sessionStorage.setItem('superAdminAuth', 'true');
     }
 
-    setUserProfile(user);
-    return user;
+    setUserProfile(normalizedUser);
+    return normalizedUser;
   };
 
   const logout = async () => {
@@ -76,7 +103,7 @@ export function AuthProvider({ children }) {
     login,
     logout,
     isAuthenticated: !!userProfile,
-    isSuperAdmin: userProfile?.role === 'superAdmin' || userProfile?.role === 'super_admin',
+    isSuperAdmin: normalizeRole(userProfile?.role) === 'superAdmin',
   };
 
   return (

@@ -5,6 +5,13 @@ echo   Starting Smart School Management System Servers
 echo ===================================================
 echo.
 
+:: Stop any stray processes on ports 5001 and 5199
+echo Releasing ports 5001 and 5199...
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":5001" ^| findstr "LISTENING"') do taskkill /f /pid %%a 2>nul
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":5199" ^| findstr "LISTENING"') do taskkill /f /pid %%a 2>nul
+echo Ports released.
+echo.
+
 :: Check if node_modules exists in root
 if not exist node_modules (
     echo [Frontend] Installing dependencies...

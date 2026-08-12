@@ -16,9 +16,13 @@ function getHeaders() {
 
 export function normalizeRole(role) {
   if (!role) return '';
-  const r = role.toString().toLowerCase().replace(/[\s_]/g, '');
-  if (r === 'superadmin' || r === 'super_admin') return 'superAdmin';
-  if (r === 'schooladmin') return 'schoolAdmin';
+  const r = role.toString().trim();
+  const lower = r.toLowerCase().replace(/[\s_-]/g, '');
+  if (lower === 'schooladmin') return 'schoolAdmin';
+  if (lower === 'superadmin') return 'superAdmin';
+  if (lower === 'teacher' || lower === 'faculty') return 'teacher';
+  if (lower === 'student') return 'student';
+  if (lower === 'parent') return 'parent';
   return r;
 }
 
@@ -195,6 +199,7 @@ export async function syncAllSchoolData(schoolId) {
   console.log(`[db.js] Fetching all backend data for school: ${schoolId}`);
   
   const keys = [
+    'schools',
     'schoolAdminUsers',
     'schoolAdminClasses',
     'schoolAdminSubjects',
