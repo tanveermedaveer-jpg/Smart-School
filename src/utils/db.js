@@ -274,6 +274,7 @@ export async function addAdmission(admission) {
 
 export async function syncAllSchoolData(schoolId) {
   console.log(`[db.js] Fetching all backend data for school: ${schoolId}`);
+  window.isSyncingFromBackend = true;
   
   const keys = [
     'schools',
@@ -307,5 +308,7 @@ export async function syncAllSchoolData(schoolId) {
   } catch (err) {
     console.error('[db.js] Error syncing school data:', err);
     throw err;
+  } finally {
+    window.isSyncingFromBackend = false;
   }
 }

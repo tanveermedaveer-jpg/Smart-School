@@ -100,6 +100,11 @@ localStorage.setItem = function(key, value) {
   if (SCHOOL_DATA_KEYS.has(key)) {
     memoryStorage[key] = value ? value.toString() : '[]';
     
+    // Skip redundant sync if currently importing data from backend
+    if (window.isSyncingFromBackend) {
+      return;
+    }
+    
     // Asynchronously synchronize this data update with Node.js backend
     const syncToBackend = async () => {
       try {
@@ -142,6 +147,32 @@ localStorage.removeItem = function(key) {
     return;
   }
   originalRemoveItem(key);
+};
+
+// 5. Virtualize sessionStorage to map to localStorage for persistence across reopens
+const originalSessionGetItem = sessionStorage.getItem.bind(sessionStorage);
+const originalSessionSetItem = sessionStorage.setItem.bind(sessionStorage);
+const originalSessionRemoveItem = sessionStorage.removeItem.bind(sessionStorage);
+
+sessionStorage.getItem = function(key) {
+  if (['authUser', 'jwtToken', 'superAdminAuth', 'tempAuthUser'].includes(key)) {
+    return originalGetItem(`__session_${key}`);
+  }
+  return originalSessionGetItem(key);
+};
+
+sessionStorage.setItem = function(key, value) {
+  if (['authUser', 'jwtToken', 'superAdminAuth', 'tempAuthUser'].includes(key)) {
+    originalSetItem(`__session_${key}`, value);
+  }
+  originalSessionSetItem(key, value);
+};
+
+sessionStorage.removeItem = function(key) {
+  if (['authUser', 'jwtToken', 'superAdminAuth', 'tempAuthUser'].includes(key)) {
+    originalRemoveItem(`__session_${key}`);
+  }
+  originalSessionRemoveItem(key);
 };
 // ────────────────────────────────────────────────────────────────────────────
 
