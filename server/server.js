@@ -547,7 +547,7 @@ app.post('/api/qr-sessions/:sessionId/scan', authenticateToken, (req, res) => {
   res.json(session);
 });
 
-if (require.main === module) {
+if (require.main === module && !process.env.VERCEL && process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
     console.log(`[Server] Smart School Backend running on http://localhost:${PORT}`);
   });
