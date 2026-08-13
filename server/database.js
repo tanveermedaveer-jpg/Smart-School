@@ -61,70 +61,171 @@ const cp = require('child_process');
 const useFirestore = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1' || process.env.USE_FIRESTORE === 'true';
 
 let dbCache = null;
+let initPromise = null;
 
-function fetchAllFromFirestore() {
+async function getAccessTokenAsync() {
+  const serviceAccountStr = process.env.FIREBASE_SERVICE_ACCOUNT;
+  if (!serviceAccountStr) return null;
+  
   try {
-    const result = cp.spawnSync(process.execPath, [path.join(process.cwd(), 'server', 'readDb.js')], {
-      encoding: 'utf8',
-      env: process.env,
-      maxBuffer: 50 * 1024 * 1024 // 50MB safe buffer
+    const serviceAccount = JSON.parse(serviceAccountStr);
+    const header = JSON.stringify({ alg: 'RS256', typ: 'JWT' });
+    const headerBase64 = Buffer.from(header).toString('base64url');
+    
+    const now = Math.floor(Date.now() / 1000);
+    const claim = JSON.stringify({
+      iss: serviceAccount.client_email,
+      scope: 'https://www.googleapis.com/auth/datastore',
+      aud: 'https://oauth2.googleapis.com/token',
+      exp: now + 3600,
+      iat: now
     });
-    if (result.status === 0 && result.stdout.trim()) {
-      return JSON.parse(result.stdout);
-    } else {
-      console.error('[Firestore Admin] Fetch process error:', result.stderr);
-    }
+    const claimBase64 = Buffer.from(claim).toString('base64url');
+    
+    const jwtInput = `${headerBase64}.${claimBase64}`;
+    const crypto = require('crypto');
+    const sign = crypto.createSign('RSA-SHA256');
+    sign.update(jwtInput);
+    
+    const privateKey = serviceAccount.private_key.replace(/\\n/g, '\n');
+    const signature = sign.sign(privateKey, 'base64url');
+    const assertion = `${jwtInput}.${signature}`;
+    
+    const res = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${assertion}`
+    });
+    const json = await res.json();
+    return json.access_token;
   } catch (err) {
-    console.error('[Firestore Admin] Fetch execution failed:', err);
+    console.error('Failed to authenticate service account:', err);
+    return null;
   }
-  return null;
+}
+
+async function fetchAllFromFirestoreAsync() {
+  const keys = [
+    'users', 'schools', 'admissions', 'demoRequests', 'contactMessages', 'systemLogs',
+    'superAdminNotifications', 'superAdminAcademicTemplates', 'parentSupportConversations',
+    'classes', 'subjects', 'teacherAssignments', 'feeStructures', 'monthlyFees', 'receipts',
+    'exams', 'results', 'notices', 'gallery', 'fees', 'timetable', 'gradeScale',
+    'settings', 'attendance', 'qrSessions', 'homework', 'schoolAdminAttendance'
+  ];
+  
+  const token = await getAccessTokenAsync();
+  const headers = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1/projects/smart-school-management-66f78/databases/(default)/documents/database';
+  
+  try {
+    const promises = keys.map(async key => {
+      try {
+        const res = await fetch(`${FIRESTORE_BASE}/${key}`, { headers });
+        if (res.status === 404) return [key, []];
+        const json = await res.json();
+        if (json.fields && json.fields.data && json.fields.data.stringValue) {
+          return [key, JSON.parse(json.fields.data.stringValue)];
+        }
+        return [key, []];
+      } catch (err) {
+        return [key, []];
+      }
+    });
+    const results = await Promise.all(promises);
+    return Object.fromEntries(results);
+  } catch (err) {
+    console.error('[Firestore Async] Fetch failed:', err);
+    return null;
+  }
+}
+
+async function initDb() {
+  if (dbCache) return dbCache;
+  if (initPromise) return initPromise;
+  
+  initPromise = (async () => {
+    if (useFirestore) {
+      console.log('[Firestore Async] Fetching database...');
+      const data = await fetchAllFromFirestoreAsync();
+      if (data && Object.keys(data).length > 0 && data.users && data.users.length > 0) {
+        dbCache = data;
+        console.log('[Firestore Async] Loaded successfully.');
+        return dbCache;
+      }
+      console.log('[Firestore Async] Database empty or fetch failed. Seeding from local file...');
+    }
+    
+    ensureDb();
+    try {
+      const raw = fs.readFileSync(DB_PATH, 'utf8');
+      dbCache = JSON.parse(raw);
+      
+      // Async seed to firestore if empty
+      if (useFirestore && dbCache) {
+        console.log('[Firestore Async] Triggering background seed...');
+        writeToFirestoreAsync(dbCache).catch(err => {
+          console.error('[Firestore Async] Background seed failed:', err);
+        });
+      }
+      
+      return dbCache;
+    } catch (err) {
+      console.error('Error reading database file:', err);
+      dbCache = {};
+      return dbCache;
+    }
+  })();
+  
+  return initPromise;
 }
 
 function readDb() {
   if (dbCache) {
     return dbCache;
   }
-
-  if (useFirestore) {
-    console.log('[Firestore Admin] Fetching database...');
-    const data = fetchAllFromFirestore();
-    if (data && Object.keys(data).length > 0 && data.users && data.users.length > 0) {
-      dbCache = data;
-      console.log('[Firestore Admin] Loaded successfully.');
-      return dbCache;
-    }
-    console.log('[Firestore Admin] Database empty or fetch failed. Seeding from local file...');
-  }
-
+  // Synchronous fallback for local dev startup (non-vercel, non-async context)
   ensureDb();
   try {
     const raw = fs.readFileSync(DB_PATH, 'utf8');
     dbCache = JSON.parse(raw);
-    
-    // Seed Firestore asynchronously on startup
-    if (useFirestore && dbCache) {
-      console.log('[Firestore Admin] Seeding database to Firestore...');
-      try {
-        const child = cp.spawn(process.execPath, [
-          path.join(process.cwd(), 'server', 'writeDb.js')
-        ], { 
-          stdio: ['pipe', 'ignore', 'ignore'], 
-          detached: true,
-          env: process.env
-        });
-        child.stdin.write(JSON.stringify(dbCache));
-        child.stdin.end();
-        child.unref();
-      } catch (err) {
-        console.error('[Firestore Admin] Async seed spawn failed:', err);
-      }
-    }
-    
     return dbCache;
   } catch (err) {
-    console.error('Error reading database file:', err);
+    console.error('Error reading database file synchronously:', err);
     return {};
   }
+}
+
+async function writeToFirestoreAsync(changedData) {
+  const token = await getAccessTokenAsync();
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1/projects/smart-school-management-66f78/databases/(default)/documents/database';
+  
+  const promises = Object.keys(changedData).map(async key => {
+    const body = {
+      fields: {
+        data: {
+          stringValue: JSON.stringify(changedData[key])
+        }
+      }
+    };
+    const url = `${FIRESTORE_BASE}/${key}?updateMask.fieldPaths=data`;
+    const res = await fetch(url, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify(body)
+    });
+    return res.status;
+  });
+  
+  await Promise.all(promises);
 }
 
 function writeDb(data) {
@@ -149,21 +250,10 @@ function writeDb(data) {
     }
 
     if (hasChanges) {
-      console.log('[Firestore Admin] Syncing changed collections:', Object.keys(changedData));
-      try {
-        const result = cp.spawnSync(process.execPath, [
-          path.join(process.cwd(), 'server', 'writeDb.js')
-        ], {
-          encoding: 'utf8',
-          input: JSON.stringify(changedData),
-          env: process.env
-        });
-        if (result.status !== 0) {
-          console.error('[Firestore Admin] Write process error:', result.stderr);
-        }
-      } catch (err) {
-        console.error('[Firestore Admin] Write execution failed:', err);
-      }
+      console.log('[Firestore Async] Syncing changed collections:', Object.keys(changedData));
+      writeToFirestoreAsync(changedData).catch(err => {
+        console.error('[Firestore Async] Background sync failed:', err);
+      });
     }
   }
 }
@@ -318,6 +408,7 @@ function saveCollection(key, schoolId, updatedItems) {
 module.exports = {
   readDb,
   writeDb,
+  initDb,
   getCollection,
   saveCollection,
   KEY_MAP

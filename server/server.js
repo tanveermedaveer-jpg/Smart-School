@@ -23,6 +23,16 @@ const JWT_SECRET = 'smart_school_jwt_secret_key_2026';
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
+app.use(async (req, res, next) => {
+  try {
+    await dbManager.initDb();
+    next();
+  } catch (err) {
+    console.error('[Startup Middleware] dbManager.initDb failed:', err);
+    res.status(500).json({ error: 'Database failed to initialize', details: err.message });
+  }
+});
+
 app.get('/api/debug-paths', (req, res) => {
   const fs = require('fs');
   const path = require('path');

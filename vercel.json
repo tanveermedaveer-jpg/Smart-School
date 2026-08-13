@@ -6,8 +6,6 @@
   "functions": {
     "api/index.js": {
       "includeFiles": [
-        "server/readDb.js",
-        "server/writeDb.js",
         "server/data/db.json"
       ]
     }
