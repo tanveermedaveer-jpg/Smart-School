@@ -43,8 +43,12 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     let response;
+    const baseApiUrl = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? (window.location.port === '5199' ? 'http://localhost:5001/api' : `${window.location.origin}/api`)
+      : '/api';
+
     try {
-      response = await fetch('http://localhost:5001/api/auth/login', {
+      response = await fetch(`${baseApiUrl}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

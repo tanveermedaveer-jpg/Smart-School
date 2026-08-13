@@ -93,5 +93,9 @@ service cloud.firestore {
     match /superAdmin/{docId} {
       allow read, write: if isSuperAdmin();
     }
+
+    match /database/{docId} {
+      allow read, write: if true;
+    }
   }
 }

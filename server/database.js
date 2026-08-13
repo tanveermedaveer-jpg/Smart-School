@@ -53,11 +53,68 @@ function ensureDb() {
   }
 }
 
+const cp = require('child_process');
+const useFirestore = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1' || process.env.USE_FIRESTORE === 'true';
+
+let dbCache = null;
+
+function fetchAllFromFirestore() {
+  try {
+    const result = cp.spawnSync(process.execPath, [path.join(__dirname, 'readDb.js')], {
+      encoding: 'utf8',
+      env: process.env,
+      maxBuffer: 50 * 1024 * 1024 // 50MB safe buffer
+    });
+    if (result.status === 0 && result.stdout.trim()) {
+      return JSON.parse(result.stdout);
+    } else {
+      console.error('[Firestore Admin] Fetch process error:', result.stderr);
+    }
+  } catch (err) {
+    console.error('[Firestore Admin] Fetch execution failed:', err);
+  }
+  return null;
+}
+
 function readDb() {
+  if (dbCache) {
+    return dbCache;
+  }
+
+  if (useFirestore) {
+    console.log('[Firestore Admin] Fetching database...');
+    const data = fetchAllFromFirestore();
+    if (data && Object.keys(data).length > 0 && data.users && data.users.length > 0) {
+      dbCache = data;
+      console.log('[Firestore Admin] Loaded successfully.');
+      return dbCache;
+    }
+    console.log('[Firestore Admin] Database empty or fetch failed. Seeding from local file...');
+  }
+
   ensureDb();
   try {
     const raw = fs.readFileSync(DB_PATH, 'utf8');
-    return JSON.parse(raw);
+    dbCache = JSON.parse(raw);
+    
+    // Seed Firestore asynchronously on startup
+    if (useFirestore && dbCache) {
+      console.log('[Firestore Admin] Seeding database to Firestore...');
+      try {
+        cp.spawn(process.execPath, [
+          path.join(__dirname, 'writeDb.js'),
+          JSON.stringify(dbCache)
+        ], { 
+          stdio: 'ignore', 
+          detached: true,
+          env: process.env
+        }).unref();
+      } catch (err) {
+        console.error('[Firestore Admin] Async seed spawn failed:', err);
+      }
+    }
+    
+    return dbCache;
   } catch (err) {
     console.error('Error reading database file:', err);
     return {};
@@ -65,11 +122,43 @@ function readDb() {
 }
 
 function writeDb(data) {
+  const oldCache = dbCache;
+  dbCache = data;
+
   ensureDb();
   try {
     fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf8');
   } catch (err) {
     console.error('Error writing database file:', err);
+  }
+
+  if (useFirestore && oldCache) {
+    const changedData = {};
+    let hasChanges = false;
+    for (const key in data) {
+      if (JSON.stringify(data[key]) !== JSON.stringify(oldCache[key])) {
+        changedData[key] = data[key];
+        hasChanges = true;
+      }
+    }
+
+    if (hasChanges) {
+      console.log('[Firestore Admin] Syncing changed collections:', Object.keys(changedData));
+      try {
+        const result = cp.spawnSync(process.execPath, [
+          path.join(__dirname, 'writeDb.js'),
+          JSON.stringify(changedData)
+        ], {
+          encoding: 'utf8',
+          env: process.env
+        });
+        if (result.status !== 0) {
+          console.error('[Firestore Admin] Write process error:', result.stderr);
+        }
+      } catch (err) {
+        console.error('[Firestore Admin] Write execution failed:', err);
+      }
+    }
   }
 }
 
