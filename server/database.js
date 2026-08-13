@@ -101,14 +101,16 @@ function readDb() {
     if (useFirestore && dbCache) {
       console.log('[Firestore Admin] Seeding database to Firestore...');
       try {
-        cp.spawn(process.execPath, [
-          path.join(__dirname, 'writeDb.js'),
-          JSON.stringify(dbCache)
+        const child = cp.spawn(process.execPath, [
+          path.join(__dirname, 'writeDb.js')
         ], { 
-          stdio: 'ignore', 
+          stdio: ['pipe', 'ignore', 'ignore'], 
           detached: true,
           env: process.env
-        }).unref();
+        });
+        child.stdin.write(JSON.stringify(dbCache));
+        child.stdin.end();
+        child.unref();
       } catch (err) {
         console.error('[Firestore Admin] Async seed spawn failed:', err);
       }
@@ -146,10 +148,10 @@ function writeDb(data) {
       console.log('[Firestore Admin] Syncing changed collections:', Object.keys(changedData));
       try {
         const result = cp.spawnSync(process.execPath, [
-          path.join(__dirname, 'writeDb.js'),
-          JSON.stringify(changedData)
+          path.join(__dirname, 'writeDb.js')
         ], {
           encoding: 'utf8',
+          input: JSON.stringify(changedData),
           env: process.env
         });
         if (result.status !== 0) {

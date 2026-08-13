@@ -1,21 +1,22 @@
 const admin = require('firebase-admin');
 
-const changedData = JSON.parse(process.argv[2]);
+const fs = require('fs');
+const changedDataRaw = fs.readFileSync(0, 'utf-8');
+const changedData = JSON.parse(changedDataRaw);
 
-if (!admin.apps.length) {
-  const serviceAccountStr = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (serviceAccountStr) {
-    admin.initializeApp({
-      credential: admin.credential.cert(JSON.parse(serviceAccountStr))
-    });
-  } else {
-    admin.initializeApp({
-      projectId: 'smart-school-management-66f78'
-    });
-  }
+const serviceAccountStr = process.env.FIREBASE_SERVICE_ACCOUNT;
+if (serviceAccountStr) {
+  admin.initializeApp({
+    credential: admin.credential.cert(JSON.parse(serviceAccountStr))
+  });
+} else {
+  admin.initializeApp({
+    projectId: 'smart-school-management-66f78'
+  });
 }
 
-const db = admin.firestore();
+const { getFirestore } = require('firebase-admin/firestore');
+const db = getFirestore();
 
 const promises = Object.keys(changedData).map(async key => {
   const val = JSON.stringify(changedData[key]);

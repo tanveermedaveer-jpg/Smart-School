@@ -8,20 +8,19 @@ const keys = [
   'settings', 'attendance', 'qrSessions', 'homework', 'schoolAdminAttendance'
 ];
 
-if (!admin.apps.length) {
-  const serviceAccountStr = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (serviceAccountStr) {
-    admin.initializeApp({
-      credential: admin.credential.cert(JSON.parse(serviceAccountStr))
-    });
-  } else {
-    admin.initializeApp({
-      projectId: 'smart-school-management-66f78'
-    });
-  }
+const serviceAccountStr = process.env.FIREBASE_SERVICE_ACCOUNT;
+if (serviceAccountStr) {
+  admin.initializeApp({
+    credential: admin.credential.cert(JSON.parse(serviceAccountStr))
+  });
+} else {
+  admin.initializeApp({
+    projectId: 'smart-school-management-66f78'
+  });
 }
 
-const db = admin.firestore();
+const { getFirestore } = require('firebase-admin/firestore');
+const db = getFirestore();
 
 Promise.all(keys.map(async key => {
   try {
