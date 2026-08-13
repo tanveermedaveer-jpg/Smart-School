@@ -143,6 +143,79 @@ async function fetchAllFromFirestoreAsync() {
   }
 }
 
+const DEFAULT_DB = {
+  users: [
+    {
+      id: "super_admin_saad",
+      email: "muhammadsaadweb10@gmail.com",
+      password: "$2a$10$.6gOfk3ceV/KrKuSfAieYO.p5qnmxsvvXhSv1.WKsXwFk1aYidk9O",
+      name: "Muhammad Saad",
+      role: "superAdmin",
+      status: "Active",
+      schoolId: "SYSTEM",
+      schoolName: "System Super Admin",
+      createdAt: "2026-08-13T07:26:28.637Z"
+    },
+    {
+      id: "1786606210437",
+      name: "Admin of Tanveer medaveer",
+      email: "tanveermedaveer@gmail.com",
+      phone: "03103716116",
+      username: "admin_tanveermedaveer",
+      password: "$2a$10$VwtbmLH.2pFFveWXPrBMzORHKTteiyj56EBvbaMrMDmO0PAGH9Iia",
+      role: "schoolAdmin",
+      status: "Active",
+      schoolId: "1786606210435",
+      isTemporaryPassword: false
+    },
+    {
+      name: "Sadaf",
+      email: "muhammadsadaf010@gmail.com",
+      phone: "03103716116",
+      username: "Sadaf",
+      password: "$2a$10$FiCjkRPbAT0Kjh0lzZN6hObJUVRwHr6Td.9BFE9fcRYOPMdwtOqtm",
+      schoolId: "1786606210435",
+      status: "Active",
+      role: "schoolAdmin",
+      id: "1786606287197",
+      isTemporaryPassword: true
+    }
+  ],
+  schools: [
+    {
+      id: "1786606210435",
+      name: "Tanveer medaveer",
+      code: "12201",
+      email: "tanveermedaveer@gmail.com",
+      phone: "03103716116",
+      address: "AHMADABAD D IKHAN",
+      city: "D I KHAN",
+      classes: "1st to 10th",
+      description: "yes",
+      logo: ""
+    }
+  ]
+};
+
+function sanitizeCache(cache) {
+  if (!cache || typeof cache !== 'object') {
+    cache = JSON.parse(JSON.stringify(DEFAULT_DB));
+  }
+  const keys = [
+    'users', 'schools', 'admissions', 'demoRequests', 'contactMessages', 'systemLogs',
+    'superAdminNotifications', 'superAdminAcademicTemplates', 'parentSupportConversations',
+    'classes', 'subjects', 'teacherAssignments', 'feeStructures', 'monthlyFees', 'receipts',
+    'exams', 'results', 'notices', 'gallery', 'fees', 'timetable', 'gradeScale',
+    'settings', 'attendance', 'qrSessions', 'homework', 'schoolAdminAttendance'
+  ];
+  keys.forEach(key => {
+    if (!cache[key]) {
+      cache[key] = DEFAULT_DB[key] || [];
+    }
+  });
+  return cache;
+}
+
 async function initDb() {
   if (dbCache) return dbCache;
   if (initPromise) return initPromise;
@@ -152,7 +225,7 @@ async function initDb() {
       console.log('[Firestore Async] Fetching database...');
       const data = await fetchAllFromFirestoreAsync();
       if (data && Object.keys(data).length > 0 && data.users && data.users.length > 0) {
-        dbCache = data;
+        dbCache = sanitizeCache(data);
         console.log('[Firestore Async] Loaded successfully.');
         return dbCache;
       }
@@ -162,7 +235,7 @@ async function initDb() {
     ensureDb();
     try {
       const raw = fs.readFileSync(DB_PATH, 'utf8');
-      dbCache = JSON.parse(raw);
+      dbCache = sanitizeCache(JSON.parse(raw));
       
       // Async seed to firestore if empty
       if (useFirestore && dbCache) {
@@ -175,7 +248,7 @@ async function initDb() {
       return dbCache;
     } catch (err) {
       console.error('Error reading database file:', err);
-      dbCache = {};
+      dbCache = sanitizeCache(null);
       return dbCache;
     }
   })();
@@ -191,11 +264,12 @@ function readDb() {
   ensureDb();
   try {
     const raw = fs.readFileSync(DB_PATH, 'utf8');
-    dbCache = JSON.parse(raw);
+    dbCache = sanitizeCache(JSON.parse(raw));
     return dbCache;
   } catch (err) {
     console.error('Error reading database file synchronously:', err);
-    return {};
+    dbCache = sanitizeCache(null);
+    return dbCache;
   }
 }
 
