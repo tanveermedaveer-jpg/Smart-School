@@ -22,8 +22,8 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 const initialSuperAdmin = {
-  email: 'muhammadsadaf010@gmail.com',
-  name: 'Super Admin',
+  email: 'muhammadsaadweb10@gmail.com',
+  name: 'Muhammad Saad',
   role: 'superAdmin',
   status: 'Active',
   schoolId: 'SYSTEM',

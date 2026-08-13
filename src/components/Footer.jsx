@@ -11,7 +11,7 @@ const Footer = () => {
       termsConditions: ""
     },
     contact: {
-      email: "muhammadsadaf010@gmail.com",
+      email: "muhammadsaadweb10@gmail.com",
       phone: "03103716116",
       facebook: "",
       twitter: "",

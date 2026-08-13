@@ -93,7 +93,7 @@ const Dashboard = () => {
         role="Super Admin"
         details={[
           { label: 'Company', value: 'Smart School Management System' },
-          { label: 'Email', value: user?.email || 'MuhammadSadaf010@gmail.com' },
+          { label: 'Email', value: user?.email || 'muhammadsaadweb10@gmail.com' },
           { label: 'Phone', value: '+92 300 1234567' }
         ]}
       />

@@ -10,7 +10,7 @@ const Contact = () => {
   });
 
   const [settings, setSettings] = useState({
-    email: 'muhammadsadaf010@gmail.com',
+    email: 'muhammadsaadweb10@gmail.com',
     phone: '03103716116',
     address: 'D I Khan City, Khyber Pakhtunkhwa, Pakistan',
     mapEmbedUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d107384.80287113192!2d70.82500030501174!3d31.831518349129532!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39260c6d5462c0eb%3A0xc3911f9d4bbdbad3!2sDera%20Ismail%20Khan%2C%20Khyber%20Pakhtunkhwa%2C%20Pakistan!5e0!3m2!1sen!2s!4v1715000000000!5m2!1sen!2s'
