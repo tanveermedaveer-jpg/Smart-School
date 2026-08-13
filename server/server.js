@@ -23,6 +23,27 @@ const JWT_SECRET = 'smart_school_jwt_secret_key_2026';
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
+app.get('/api/debug-paths', (req, res) => {
+  const fs = require('fs');
+  const path = require('path');
+  
+  const filesInCwd = fs.existsSync(process.cwd()) ? fs.readdirSync(process.cwd()) : [];
+  const filesInServer = fs.existsSync(path.join(process.cwd(), 'server')) ? fs.readdirSync(path.join(process.cwd(), 'server')) : [];
+  const filesInApi = fs.existsSync(path.join(process.cwd(), 'api')) ? fs.readdirSync(path.join(process.cwd(), 'api')) : [];
+  
+  res.json({
+    cwd: process.cwd(),
+    dirname: __dirname,
+    filesInCwd,
+    filesInServer,
+    filesInApi,
+    env: {
+      NODE_ENV: process.env.NODE_ENV,
+      VERCEL: process.env.VERCEL
+    }
+  });
+});
+
 // Middleware to verify JWT token
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
