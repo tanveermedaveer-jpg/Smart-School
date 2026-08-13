@@ -135,13 +135,90 @@ export async function saveCollection(key, schoolId, updatedItems) {
   });
 }
 
+export async function getGallery(schoolId) {
+  const url = schoolId ? `${BASE_URL}/gallery?schoolId=${schoolId}` : `${BASE_URL}/gallery`;
+  const res = await fetch(url, { headers: getHeaders() });
+  return res.ok ? await res.json() : [];
+}
+
+export async function uploadGalleryImage(item) {
+  const res = await fetch(`${BASE_URL}/gallery`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(item)
+  });
+  return res.ok ? await res.json() : null;
+}
+
+export async function updateGalleryImage(id, updates) {
+  const res = await fetch(`${BASE_URL}/gallery/${id}`, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify(updates)
+  });
+  return res.ok ? await res.json() : null;
+}
+
+export async function deleteGalleryImage(id) {
+  const res = await fetch(`${BASE_URL}/gallery/${id}`, {
+    method: 'DELETE',
+    headers: getHeaders()
+  });
+  return res.ok;
+}
+
+export async function getPublicGallery() {
+  const res = await fetch(`${BASE_URL}/public/gallery`);
+  return res.ok ? await res.json() : [];
+}
+
+export async function getPublicSchools() {
+  const res = await fetch(`${BASE_URL}/public/schools`);
+  return res.ok ? await res.json() : [];
+}
+
+export async function submitAdmission(admission) {
+  const res = await fetch(`${BASE_URL}/public/admissions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(admission)
+  });
+  return res.ok ? await res.json() : null;
+}
+
+export async function getAdmissionsScoped(schoolId) {
+  const url = schoolId ? `${BASE_URL}/admissions?schoolId=${schoolId}` : `${BASE_URL}/admissions`;
+  const res = await fetch(url, { headers: getHeaders() });
+  return res.ok ? await res.json() : [];
+}
+
+export async function updateAdmissionStatus(id, status) {
+  const res = await fetch(`${BASE_URL}/admissions/${id}`, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify({ status })
+  });
+  return res.ok ? await res.json() : null;
+}
+
+export async function deleteAdmission(id) {
+  const res = await fetch(`${BASE_URL}/admissions/${id}`, {
+    method: 'DELETE',
+    headers: getHeaders()
+  });
+  return res.ok;
+}
+
 export async function getAdmissions() {
-  return getCollection('admissions');
+  return getAdmissionsScoped();
 }
 
 export async function saveAdmissions(admissions) {
   return saveCollection('admissions', null, admissions);
 }
+
 
 export async function getAttendance(schoolId) {
   const res = await fetch(`${BASE_URL}/collections/schoolAdminAttendance?schoolId=${schoolId}`, { headers: getHeaders() });
@@ -190,9 +267,7 @@ export async function syncAttendanceFromFirestore(schoolId) {
 }
 
 export async function addAdmission(admission) {
-  const admissions = await getAdmissions();
-  const updated = [...admissions, admission];
-  await saveAdmissions(updated);
+  return submitAdmission(admission);
 }
 
 export async function syncAllSchoolData(schoolId) {

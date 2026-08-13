@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { generateMonthlyFees } from '../../utils/feeGenerator';
 import PasswordInput from '../../components/PasswordInput';
 import { logSystemAction } from '../../utils/logger';
+import { getAdmissionsScoped, updateAdmissionStatus } from '../../utils/db';
 
 const Admissions = () => {
   const [admissions, setAdmissions] = useState([]);
@@ -20,23 +21,27 @@ const Admissions = () => {
   const [parentPassword, setParentPassword] = useState('');
   const [generatedRollNumber, setGeneratedRollNumber] = useState('');
 
-  useEffect(() => {
-    // Load admissions from global state (Homepage writes here)
-    const saved = JSON.parse(localStorage.getItem('admissions') || '[]');
-    setAdmissions(saved.reverse()); // Show newest first
+  const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
 
+  const loadAdmissions = async () => {
+    if (!authUser.schoolId) return;
+    try {
+      const data = await getAdmissionsScoped(authUser.schoolId);
+      setAdmissions([...data].reverse()); // Show newest first
+      localStorage.setItem('admissions', JSON.stringify(data));
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to load admissions.');
+    }
+  };
+
+  useEffect(() => {
+    loadAdmissions();
     const savedClasses = JSON.parse(localStorage.getItem('schoolAdminClasses') || '[]');
     setClasses(savedClasses);
   }, []);
 
-  const saveToLocal = (updated) => {
-    setAdmissions(updated);
-    // Reverse it back before saving if we reversed on load, but actually it's easier to just save in current order
-    // Wait, let's keep the original order in storage, so reverse it back
-    localStorage.setItem('admissions', JSON.stringify([...updated].reverse()));
-  };
-
-  const handleStatusChange = (id, newStatus) => {
+  const handleStatusChange = async (id, newStatus) => {
     if (newStatus === 'Approved') {
       const req = admissions.find(a => a.id === id);
       
@@ -69,22 +74,28 @@ const Admissions = () => {
 
     if (window.confirm(`Are you sure you want to mark this as ${newStatus}?`)) {
       const req = admissions.find(a => a.id === id);
-      const updated = admissions.map(a => a.id === id ? { ...a, status: newStatus } : a);
-      saveToLocal(updated);
-      toast.success(`Admission ${newStatus.toLowerCase()}`);
+      try {
+        await updateAdmissionStatus(id, newStatus);
+        const updated = admissions.map(a => a.id === id ? { ...a, status: newStatus } : a);
+        setAdmissions(updated);
+        localStorage.setItem('admissions', JSON.stringify([...updated].reverse()));
+        toast.success(`Admission ${newStatus.toLowerCase()}`);
 
-      const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
-      logSystemAction(
-        `Admission status changed to ${newStatus}: ${req?.studentName || 'Student'}`,
-        authUser.name || 'School Admin',
-        'School Admin',
-        authUser.schoolName || 'School',
-        authUser.schoolId
-      );
+        logSystemAction(
+          `Admission status changed to ${newStatus}: ${req?.studentName || 'Student'}`,
+          authUser.name || 'School Admin',
+          'School Admin',
+          authUser.schoolName || 'School',
+          authUser.schoolId
+        );
+      } catch (err) {
+        console.error(err);
+        toast.error('Failed to update status on server.');
+      }
     }
   };
 
-  const handleApprove = (e) => {
+  const handleApprove = async (e) => {
     e.preventDefault();
     if (!assignClassId) {
       toast.error('Please assign a class');
@@ -95,68 +106,76 @@ const Admissions = () => {
       return;
     }
 
-    const updated = admissions.map(a => a.id === selectedReq.id ? { ...a, status: 'Approved', assignedClassId: assignClassId, rollNumber: generatedRollNumber } : a);
-    saveToLocal(updated);
+    try {
+      await updateAdmissionStatus(selectedReq.id, 'Approved');
+      
+      const updated = admissions.map(a => a.id === selectedReq.id ? { ...a, status: 'Approved', assignedClassId: assignClassId, rollNumber: generatedRollNumber } : a);
+      setAdmissions(updated);
+      localStorage.setItem('admissions', JSON.stringify([...updated].reverse()));
 
-    const users = JSON.parse(localStorage.getItem('schoolAdminUsers') || '[]');
-    const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
-    const schoolId = authUser.schoolId || 'global';
-    
-    const studentId = Date.now();
-    const parentId = Date.now() + 1;
-    
-    const newStudent = {
-      id: studentId,
-      name: selectedReq.studentName,
-      email: generatedRollNumber,
-      phone: selectedReq.phone,
-      username: generatedRollNumber,
-      rollNumber: generatedRollNumber,
-      password: studentPassword,
-      role: 'student',
-      status: 'Active',
-      classId: assignClassId,
-      schoolId: schoolId,
-      parentId: parentId
-    };
-    
-    const newParent = {
-      id: parentId,
-      name: selectedReq.parentName,
-      email: selectedReq.parentEmail,
-      phone: selectedReq.phone,
-      username: selectedReq.parentEmail,
-      password: parentPassword,
-      role: 'parent',
-      status: 'Active',
-      linkedStudentId: studentId,
-      childId: studentId,
-      schoolId: schoolId
-    };
+      const users = JSON.parse(localStorage.getItem('schoolAdminUsers') || '[]');
+      const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
+      const schoolId = authUser.schoolId || 'global';
+      
+      const studentId = Date.now();
+      const parentId = Date.now() + 1;
+      
+      const newStudent = {
+        id: studentId,
+        name: selectedReq.studentName,
+        email: generatedRollNumber,
+        phone: selectedReq.phone,
+        username: generatedRollNumber,
+        rollNumber: generatedRollNumber,
+        password: studentPassword,
+        role: 'student',
+        status: 'Active',
+        classId: assignClassId,
+        schoolId: schoolId,
+        parentId: parentId
+      };
+      
+      const newParent = {
+        id: parentId,
+        name: selectedReq.parentName,
+        email: selectedReq.parentEmail,
+        phone: selectedReq.phone,
+        username: selectedReq.parentEmail,
+        password: parentPassword,
+        role: 'parent',
+        status: 'Active',
+        linkedStudentId: studentId,
+        childId: studentId,
+        schoolId: schoolId
+      };
 
-    localStorage.setItem('schoolAdminUsers', JSON.stringify([...users, newStudent, newParent]));
-    
-    // Generate monthly fee record for the new active student
-    const generated = generateMonthlyFees(studentId);
-    
-    logSystemAction(
-      `Admission Approved: ${selectedReq.studentName} (ID: ${generatedRollNumber})`,
-      authUser.name || 'School Admin',
-      'School Admin',
-      authUser.schoolName || 'School',
-      schoolId
-    );
+      localStorage.setItem('schoolAdminUsers', JSON.stringify([...users, newStudent, newParent]));
+      
+      // Generate monthly fee record for the new active student
+      const generated = generateMonthlyFees(studentId);
+      
+      logSystemAction(
+        `Admission Approved: ${selectedReq.studentName} (ID: ${generatedRollNumber})`,
+        authUser.name || 'School Admin',
+        'School Admin',
+        authUser.schoolName || 'School',
+        schoolId
+      );
 
-    toast.success('Admission approved! Student & Parent accounts created.');
-    if (generated > 0) {
-      toast.success('Initial fee record generated for the current month.');
+      toast.success('Admission approved! Student & Parent accounts created.');
+      if (generated > 0) {
+        toast.success('Initial fee record generated for the current month.');
+      }
+
+      setIsModalOpen(false);
+      setSelectedReq(null);
+      setAssignClassId('');
+      setStudentPassword('');
+      setParentPassword('');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to approve admission application.');
     }
-
-    setIsModalOpen(false);
-    setSelectedReq(null);
-    setAssignClassId('');
-    setStudentPassword('');
-    setParentPassword('');
   };
 
   const handleView = (req) => {

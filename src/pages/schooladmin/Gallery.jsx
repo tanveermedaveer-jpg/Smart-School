@@ -1,25 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Image as ImageIcon, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { getGallery, uploadGalleryImage, deleteGalleryImage } from '../../utils/db';
 
 const Gallery = () => {
   const [images, setImages] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
   
   const [formData, setFormData] = useState({
     title: '',
+    category: 'Other',
     url: ''
   });
 
-  useEffect(() => {
-    const savedImages = JSON.parse(localStorage.getItem('schoolAdminGallery') || '[]');
-    setImages(savedImages);
-  }, []);
-
-  const saveToLocal = (updatedImages) => {
-    setImages(updatedImages);
-    localStorage.setItem('schoolAdminGallery', JSON.stringify(updatedImages));
+  const loadGallery = async () => {
+    if (!authUser.schoolId) return;
+    try {
+      setIsLoading(true);
+      const data = await getGallery(authUser.schoolId);
+      setImages(data);
+      localStorage.setItem('schoolAdminGallery', JSON.stringify(data));
+    } catch (err) {
+      console.error('Error fetching gallery:', err);
+      toast.error('Failed to load gallery from server.');
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  useEffect(() => {
+    loadGallery();
+  }, []);
 
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -28,6 +41,7 @@ const Gallery = () => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Check file size, compress slightly if too large to keep base64 storage clean
       const reader = new FileReader();
       reader.onloadend = () => {
         setFormData({ ...formData, url: reader.result });
@@ -36,25 +50,58 @@ const Gallery = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.url) {
       toast.error('Please select an image');
       return;
     }
     
-    const newImage = { ...formData, id: Date.now(), date: new Date().toISOString().split('T')[0] };
-    saveToLocal([...images, newImage]);
-    toast.success('Image uploaded successfully');
+    try {
+      const payload = {
+        title: formData.title,
+        category: formData.category,
+        url: formData.url,
+        schoolId: authUser.schoolId,
+        status: 'published' // Auto-publish for School Admin uploads by default or mark as pending for approval?
+        // Wait, the prompt requirements say:
+        // "Super Admin should be able to: View gallery images, Filter by school, Filter by category, Approve/publish, Hide/unpublish, Delete"
+        // "Only display content that is marked as published/active."
+        // "If Super Admin deletes/unpublishes it, it should no longer appear publicly."
+        // Let's set default upload status to 'published' so it immediately shows up, but Super Admin can unpublish/edit it.
+        // Wait! Let's default it to 'published' so that it's easy to test and use, but Super Admin can unpublish it.
+      };
+      
+      const res = await uploadGalleryImage(payload);
+      if (res) {
+        toast.success('Image uploaded successfully');
+        loadGallery();
+      } else {
+        toast.error('Failed to upload image.');
+      }
+    } catch (err) {
+      console.error('Upload error:', err);
+      toast.error('Error uploading image.');
+    }
     
     setIsModalOpen(false);
-    setFormData({ title: '', url: '' });
+    setFormData({ title: '', category: 'Other', url: '' });
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this image?')) {
-      saveToLocal(images.filter(img => img.id !== id));
-      toast.success('Image deleted');
+      try {
+        const success = await deleteGalleryImage(id);
+        if (success) {
+          toast.success('Image deleted');
+          loadGallery();
+        } else {
+          toast.error('Failed to delete image.');
+        }
+      } catch (err) {
+        console.error('Delete error:', err);
+        toast.error('Error deleting image.');
+      }
     }
   };
 
@@ -71,7 +118,12 @@ const Gallery = () => {
         </button>
       </div>
 
-      {images.length === 0 ? (
+      {isLoading ? (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center text-gray-500">
+          <span className="animate-spin inline-block rounded-full h-8 w-8 border-b-2 border-darkBlue mb-4"></span>
+          <p>Loading gallery items...</p>
+        </div>
+      ) : images.length === 0 ? (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center text-gray-500 flex flex-col items-center">
           <ImageIcon className="w-16 h-16 text-gray-300 mb-4" />
           <p>No images in your gallery yet.</p>
@@ -92,8 +144,18 @@ const Gallery = () => {
                 </div>
               </div>
               <div className="p-4">
-                <h3 className="font-semibold text-gray-800 truncate" title={img.title}>{img.title}</h3>
-                <p className="text-xs text-gray-500 mt-1">{img.date}</p>
+                <div className="flex justify-between items-start gap-2 mb-2">
+                  <h3 className="font-semibold text-gray-800 truncate flex-1" title={img.title}>{img.title}</h3>
+                  <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0 ${
+                    img.status === 'published' ? 'bg-green-150 text-green-700 bg-green-100' : 'bg-yellow-100 text-yellow-700'
+                  }`}>
+                    {img.status === 'published' ? 'Published' : 'Hidden'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-xs text-gray-500">
+                  <span className="bg-gray-100 px-2 py-1 rounded text-gray-600 font-medium">{img.category || 'Other'}</span>
+                  <span>{img.createdAt ? new Date(img.createdAt).toLocaleDateString() : ''}</span>
+                </div>
               </div>
             </div>
           ))}
@@ -102,7 +164,7 @@ const Gallery = () => {
 
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden my-8">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden my-8 animate-in fade-in zoom-in-95 duration-200">
             <div className="bg-darkBlue px-6 py-4 flex justify-between items-center text-white">
               <h3 className="text-xl font-semibold">Upload Image</h3>
               <button onClick={() => setIsModalOpen(false)} className="text-gray-300 hover:text-white transition-colors">
@@ -113,6 +175,19 @@ const Gallery = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Image Title / Description</label>
                 <input required type="text" name="title" value={formData.title} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-greenAccent focus:border-greenAccent outline-none" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Category / Type</label>
+                <select name="category" value={formData.category} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-greenAccent focus:border-greenAccent outline-none bg-white">
+                  <option value="School Logo">School Logo</option>
+                  <option value="School Banner">School Banner</option>
+                  <option value="Campus">Campus</option>
+                  <option value="Events">Events</option>
+                  <option value="Activities">Activities</option>
+                  <option value="Achievements">Achievements</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
 
               <div>

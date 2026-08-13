@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { X, MapPin, BookOpen, GraduationCap } from 'lucide-react';
+import { getPublicSchools, submitAdmission } from '../utils/db';
 
 const Admission = () => {
   const [schools, setSchools] = useState([]);
@@ -18,15 +19,12 @@ const Admission = () => {
   useEffect(() => {
     const loadSchools = async () => {
       try {
-        const { getSchools } = await import('../utils/db');
-        const data = await getSchools();
-        const activeSchools = data.filter(s => s.status === 'Active');
+        const data = await getPublicSchools();
+        // Only show active schools with admissionsEnabled true
+        const activeSchools = data.filter(s => s.admissionsEnabled);
         setSchools(activeSchools);
-        localStorage.setItem('schools', JSON.stringify(data));
       } catch (err) {
         console.error('Error loading schools in Admission:', err);
-        const data = JSON.parse(localStorage.getItem('schools') || '[]');
-        setSchools(data.filter(s => s.status === 'Active'));
       }
     };
     loadSchools();
@@ -51,20 +49,23 @@ const Admission = () => {
     };
 
     try {
-      const { addAdmission } = await import('../utils/db');
-      await addAdmission(newAdmission);
+      const res = await submitAdmission(newAdmission);
+      if (res) {
+        const existing = JSON.parse(localStorage.getItem('admissions') || '[]');
+        localStorage.setItem('admissions', JSON.stringify([newAdmission, ...existing]));
 
-      const existing = JSON.parse(localStorage.getItem('admissions') || '[]');
-      localStorage.setItem('admissions', JSON.stringify([newAdmission, ...existing]));
-
-      toast.success('Application submitted successfully!');
-      setIsModalOpen(false);
-      setFormData({ studentName: '', class: '', schoolId: '', parentName: '', phone: '', parentEmail: '', address: '' });
+        toast.success('Application submitted successfully!');
+        setIsModalOpen(false);
+        setFormData({ studentName: '', class: '', schoolId: '', parentName: '', phone: '', parentEmail: '', address: '' });
+      } else {
+        toast.error('Failed to submit application.');
+      }
     } catch (err) {
       console.error('Error submitting application:', err);
-      toast.error('Failed to submit application to Firestore.');
+      toast.error('Failed to submit application to server.');
     }
   };
+
 
   const PlaceholderCard = ({ banner, logo, name, city }) => (
     <div className="bg-white rounded-2xl shadow-md hover:shadow-2xl border border-gray-100 overflow-hidden transition-all duration-300 group flex flex-col transform hover:-translate-y-1">

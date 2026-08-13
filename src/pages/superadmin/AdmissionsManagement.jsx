@@ -2,40 +2,41 @@ import React, { useState, useEffect } from 'react';
 import ExportButtons from '../../components/ExportButtons';
 import { Check, X, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { getAdmissions, saveAdmissions, getSchools } from '../../utils/db';
+import { getAdmissions, updateAdmissionStatus, deleteAdmission, getSchools } from '../../utils/db';
 const AdmissionsManagement = () => {
   const [admissions, setAdmissions] = useState([]);
   const [schools, setSchools] = useState({});
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setIsLoading(true);
-        const data = await getAdmissions();
-        setAdmissions(data);
-        localStorage.setItem('admissions', JSON.stringify(data));
+  const loadData = async () => {
+    try {
+      setIsLoading(true);
+      const data = await getAdmissions();
+      setAdmissions(data);
+      localStorage.setItem('admissions', JSON.stringify(data));
 
-        const schoolsData = await getSchools();
-        const schoolMap = schoolsData.reduce((acc, school) => {
-          acc[school.id] = school.name;
-          return acc;
-        }, {});
-        setSchools(schoolMap);
-      } catch (err) {
-        console.error('Error loading admissions data:', err);
-        toast.error('Failed to load admissions from database.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      const schoolsData = await getSchools();
+      const schoolMap = schoolsData.reduce((acc, school) => {
+        acc[school.id] = school.name;
+        return acc;
+      }, {});
+      setSchools(schoolMap);
+    } catch (err) {
+      console.error('Error loading admissions data:', err);
+      toast.error('Failed to load admissions from database.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadData();
   }, []);
 
   const updateStatus = async (id, newStatus) => {
     try {
+      await updateAdmissionStatus(id, newStatus);
       const updated = admissions.map(a => a.id === id ? { ...a, status: newStatus } : a);
-      await saveAdmissions(updated);
       setAdmissions(updated);
       localStorage.setItem('admissions', JSON.stringify(updated));
       toast.success(`Application ${newStatus.toLowerCase()}`);
@@ -48,17 +49,22 @@ const AdmissionsManagement = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this admission?')) {
       try {
-        const updated = admissions.filter(a => a.id !== id);
-        await saveAdmissions(updated);
-        setAdmissions(updated);
-        localStorage.setItem('admissions', JSON.stringify(updated));
-        toast.success('Admission deleted successfully');
+        const success = await deleteAdmission(id);
+        if (success) {
+          const updated = admissions.filter(a => a.id !== id);
+          setAdmissions(updated);
+          localStorage.setItem('admissions', JSON.stringify(updated));
+          toast.success('Admission deleted successfully');
+        } else {
+          toast.error('Failed to delete admission.');
+        }
       } catch (err) {
         console.error('Error deleting admission:', err);
         toast.error('Failed to delete admission from database.');
       }
     }
   };
+
 
   return (
     <div>

@@ -293,6 +293,217 @@ app.post('/api/collections/:key', authenticateToken, (req, res) => {
   res.json({ message: 'Collection saved successfully.' });
 });
 
+// ─── DEDICATED GALLERY AND ADMISSIONS ENDPOINTS ─────────────────────────
+
+// Public: Get active schools
+app.get('/api/public/schools', (req, res) => {
+  const db = dbManager.readDb();
+  const schools = db.schools || [];
+  const active = schools.filter(s => s.status === 'Active');
+  res.json(active);
+});
+
+// Public: Get published gallery items
+app.get('/api/public/gallery', (req, res) => {
+  const db = dbManager.readDb();
+  const gallery = db.gallery || [];
+  const published = gallery.filter(item => item.status === 'published');
+  res.json(published);
+});
+
+// Public: Submit admission application
+app.post('/api/public/admissions', (req, res) => {
+  const db = dbManager.readDb();
+  const admission = req.body;
+  if (!admission || !admission.schoolId) {
+    return res.status(400).json({ message: 'Invalid admission data or missing School ID' });
+  }
+
+  const newAdmission = {
+    ...admission,
+    id: admission.id || Date.now().toString(),
+    status: 'Pending',
+    createdAt: admission.createdAt || new Date().toISOString(),
+    date: admission.date || new Date().toISOString()
+  };
+
+  if (!db.admissions) db.admissions = [];
+  db.admissions.push(newAdmission);
+  dbManager.writeDb(db);
+  res.status(201).json(newAdmission);
+});
+
+// Authenticated: Get gallery items (scoped by schoolId if schoolAdmin)
+app.get('/api/gallery', authenticateToken, (req, res) => {
+  const db = dbManager.readDb();
+  const gallery = db.gallery || [];
+  const role = normalizeRole(req.user.role);
+
+  if (role === 'superAdmin') {
+    const { schoolId } = req.query;
+    if (schoolId) {
+      return res.json(gallery.filter(item => item.schoolId && item.schoolId.toString() === schoolId.toString()));
+    }
+    return res.json(gallery);
+  } else {
+    // School Admin
+    const schoolId = req.user.schoolId;
+    return res.json(gallery.filter(item => item.schoolId && item.schoolId.toString() === schoolId.toString()));
+  }
+});
+
+// Authenticated: Add gallery item (scoped by schoolId if schoolAdmin)
+app.post('/api/gallery', authenticateToken, (req, res) => {
+  const db = dbManager.readDb();
+  const role = normalizeRole(req.user.role);
+  const { title, url, category, status } = req.body;
+
+  if (!url) {
+    return res.status(400).json({ message: 'Image URL/data is required' });
+  }
+
+  let schoolId = req.body.schoolId;
+  if (role !== 'superAdmin') {
+    schoolId = req.user.schoolId;
+  }
+
+  if (!schoolId) {
+    return res.status(400).json({ message: 'School ID is required' });
+  }
+
+  const newItem = {
+    id: Date.now().toString(),
+    schoolId: schoolId.toString(),
+    url,
+    title: title || 'Untitled',
+    category: category || 'Other',
+    status: status || 'pending',
+    createdAt: new Date().toISOString()
+  };
+
+  if (!db.gallery) db.gallery = [];
+  db.gallery.push(newItem);
+  dbManager.writeDb(db);
+  res.status(201).json(newItem);
+});
+
+// Authenticated: Update gallery item
+app.put('/api/gallery/:id', authenticateToken, (req, res) => {
+  const db = dbManager.readDb();
+  const role = normalizeRole(req.user.role);
+  const { id } = req.params;
+  const updates = req.body;
+
+  if (!db.gallery) db.gallery = [];
+  const idx = db.gallery.findIndex(item => item.id.toString() === id.toString());
+  if (idx === -1) {
+    return res.status(404).json({ message: 'Gallery item not found' });
+  }
+
+  const item = db.gallery[idx];
+  if (role !== 'superAdmin' && item.schoolId.toString() !== req.user.schoolId.toString()) {
+    return res.status(403).json({ message: 'Access Denied: You do not own this gallery item.' });
+  }
+
+  db.gallery[idx] = {
+    ...item,
+    ...updates,
+    id: item.id, // preserve ID
+    schoolId: item.schoolId // preserve schoolId
+  };
+
+  dbManager.writeDb(db);
+  res.json(db.gallery[idx]);
+});
+
+// Authenticated: Delete gallery item
+app.delete('/api/gallery/:id', authenticateToken, (req, res) => {
+  const db = dbManager.readDb();
+  const role = normalizeRole(req.user.role);
+  const { id } = req.params;
+
+  if (!db.gallery) db.gallery = [];
+  const idx = db.gallery.findIndex(item => item.id.toString() === id.toString());
+  if (idx === -1) {
+    return res.status(404).json({ message: 'Gallery item not found' });
+  }
+
+  const item = db.gallery[idx];
+  if (role !== 'superAdmin' && item.schoolId.toString() !== req.user.schoolId.toString()) {
+    return res.status(403).json({ message: 'Access Denied: You do not own this gallery item.' });
+  }
+
+  db.gallery.splice(idx, 1);
+  dbManager.writeDb(db);
+  res.json({ message: 'Gallery item deleted successfully.' });
+});
+
+// Authenticated: Get admissions (scoped by schoolId if schoolAdmin)
+app.get('/api/admissions', authenticateToken, (req, res) => {
+  const db = dbManager.readDb();
+  const admissions = db.admissions || [];
+  const role = normalizeRole(req.user.role);
+
+  if (role === 'superAdmin') {
+    const { schoolId } = req.query;
+    if (schoolId) {
+      return res.json(admissions.filter(item => item.schoolId && item.schoolId.toString() === schoolId.toString()));
+    }
+    return res.json(admissions);
+  } else {
+    // School Admin
+    const schoolId = req.user.schoolId;
+    return res.json(admissions.filter(item => item.schoolId && item.schoolId.toString() === schoolId.toString()));
+  }
+});
+
+// Authenticated: Update admission application status
+app.put('/api/admissions/:id', authenticateToken, (req, res) => {
+  const db = dbManager.readDb();
+  const role = normalizeRole(req.user.role);
+  const { id } = req.params;
+  const { status } = req.body;
+
+  if (!db.admissions) db.admissions = [];
+  const idx = db.admissions.findIndex(a => a.id.toString() === id.toString());
+  if (idx === -1) {
+    return res.status(404).json({ message: 'Admission application not found' });
+  }
+
+  const admission = db.admissions[idx];
+  if (role !== 'superAdmin' && admission.schoolId.toString() !== req.user.schoolId.toString()) {
+    return res.status(403).json({ message: 'Access Denied: You do not manage this school.' });
+  }
+
+  admission.status = status;
+  db.admissions[idx] = admission;
+  dbManager.writeDb(db);
+  res.json(admission);
+});
+
+// Authenticated: Delete admission application
+app.delete('/api/admissions/:id', authenticateToken, (req, res) => {
+  const db = dbManager.readDb();
+  const role = normalizeRole(req.user.role);
+  const { id } = req.params;
+
+  if (!db.admissions) db.admissions = [];
+  const idx = db.admissions.findIndex(a => a.id.toString() === id.toString());
+  if (idx === -1) {
+    return res.status(404).json({ message: 'Admission application not found' });
+  }
+
+  const admission = db.admissions[idx];
+  if (role !== 'superAdmin' && admission.schoolId.toString() !== req.user.schoolId.toString()) {
+    return res.status(403).json({ message: 'Access Denied: You do not manage this school.' });
+  }
+
+  db.admissions.splice(idx, 1);
+  dbManager.writeDb(db);
+  res.json({ message: 'Admission application deleted successfully.' });
+});
+
+
 // ─── QR SESSION ENDPOINTS ────────────────────────────────────────────────
 
 app.get('/api/qr-sessions/:sessionId', authenticateToken, (req, res) => {

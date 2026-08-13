@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { getPublicGallery, getPublicSchools } from '../utils/db';
 
 const Gallery = () => {
   const [schools, setSchools] = useState([]);
+  const [galleryItems, setGalleryItems] = useState([]);
+  const [selectedSchoolId, setSelectedSchoolId] = useState('');
+  
   const [visibleSlides, setVisibleSlides] = useState(3);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
@@ -10,19 +14,18 @@ const Gallery = () => {
   const [touchEnd, setTouchEnd] = useState(null);
 
   useEffect(() => {
-    const loadSchools = async () => {
+    const loadData = async () => {
       try {
-        const { getSchools } = await import('../utils/db');
-        const data = await getSchools();
-        setSchools(data.filter(s => s.status === 'Active'));
-        localStorage.setItem('schools', JSON.stringify(data));
+        const schoolsData = await getPublicSchools();
+        setSchools(schoolsData);
+        
+        const galleryData = await getPublicGallery();
+        setGalleryItems(galleryData);
       } catch (err) {
-        console.error('Error loading schools in Gallery:', err);
-        const data = JSON.parse(localStorage.getItem('schools') || '[]');
-        setSchools(data.filter(s => s.status === 'Active'));
+        console.error('Error loading public gallery:', err);
       }
     };
-    loadSchools();
+    loadData();
   }, []);
 
   useEffect(() => {
@@ -40,10 +43,6 @@ const Gallery = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const banners = schools.filter(s => s.banner && s.featured).map(s => s.banner);
-  const logos = schools.filter(s => s.logo).map(s => s.logo);
-  const hasContent = banners.length > 0 || logos.length > 0;
-
   const defaultItems = [
     { title: "School Campus", img: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=800&q=80" },
     { title: "Students in Classroom", img: "https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=800&q=80" },
@@ -53,21 +52,37 @@ const Gallery = () => {
     { title: "Graduation Ceremony", img: "https://images.unsplash.com/photo-1558021212-51b6ecfa0db9?auto=format&fit=crop&w=800&q=80" }
   ];
 
-  const activeItems = hasContent 
-    ? [
-        ...schools.filter(s => s.banner && s.featured).map(s => ({ title: s.name || "School Banner", img: s.banner })),
-        ...schools.filter(s => s.logo).map(s => ({ title: `${s.name || "School"} Logo`, img: s.logo }))
-      ]
-    : defaultItems;
+  // Dynamic active items based on active/published gallery entries
+  let activeItems = [];
+  
+  if (galleryItems.length > 0) {
+    // Filter by selected school if specified
+    const filteredGallery = selectedSchoolId 
+      ? galleryItems.filter(item => item.schoolId && item.schoolId.toString() === selectedSchoolId.toString())
+      : galleryItems;
+      
+    activeItems = filteredGallery.map(item => {
+      const school = schools.find(s => s.id?.toString() === item.schoolId?.toString());
+      const prefix = school ? `${school.name} - ` : '';
+      return {
+        title: `${prefix}${item.title}`,
+        img: item.url
+      };
+    });
+  }
+
+  // Fallback to default items if no dynamic gallery content exists
+  const hasDynamicContent = activeItems.length > 0;
+  if (!hasDynamicContent) {
+    activeItems = defaultItems;
+  }
 
   const maxIndex = Math.max(0, activeItems.length - visibleSlides);
 
-  // Clamp current index when active items count changes dynamically
+  // Reset index when active items count changes dynamically
   useEffect(() => {
-    if (currentIndex > maxIndex) {
-      setCurrentIndex(maxIndex);
-    }
-  }, [activeItems.length, maxIndex, currentIndex]);
+    setCurrentIndex(0);
+  }, [selectedSchoolId, galleryItems.length]);
 
   const nextSlide = () => {
     setCurrentIndex(prev => (prev + 1 > maxIndex ? 0 : prev + 1));
@@ -82,11 +97,10 @@ const Gallery = () => {
     if (isHovered || maxIndex === 0) return;
     const interval = setInterval(() => {
       nextSlide();
-    }, 5000); // Transition every 5 seconds for best usability
+    }, 5000);
     return () => clearInterval(interval);
   }, [currentIndex, isHovered, maxIndex]);
 
-  // Touch handlers for mobile gesture navigation
   const handleTouchStart = (e) => {
     setTouchStart(e.targetTouches[0].clientX);
   };
@@ -110,20 +124,52 @@ const Gallery = () => {
     setTouchEnd(null);
   };
 
+  // Grouping: find schools that have at least one published gallery item
+  const schoolsWithGallery = schools.filter(school => 
+    galleryItems.some(item => item.schoolId && item.schoolId.toString() === school.id.toString())
+  );
+
   return (
     <section id="gallery" className="py-20 bg-gray-50 border-t border-gray-100 overflow-hidden">
       <div className="container mx-auto px-6">
         
         {/* Section Header */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-darkBlue mb-4">Gallery</h2>
           <div className="w-16 h-1 bg-greenAccent mx-auto rounded-full mb-6"></div>
-          {!hasContent && (
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Browse through our campus highlights, laboratories, and student event highlights.
-            </p>
-          )}
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            Browse through our campus highlights, events, and student achievements.
+          </p>
         </div>
+
+        {/* School Tabs for Grouping (Only render if there are multiple schools with custom galleries) */}
+        {galleryItems.length > 0 && schoolsWithGallery.length > 0 && (
+          <div className="flex flex-wrap justify-center gap-2 mb-10 max-w-4xl mx-auto">
+            <button
+              onClick={() => setSelectedSchoolId('')}
+              className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
+                selectedSchoolId === ''
+                  ? 'bg-darkBlue text-white shadow-md'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              All Schools
+            </button>
+            {schoolsWithGallery.map(school => (
+              <button
+                key={school.id}
+                onClick={() => setSelectedSchoolId(school.id)}
+                className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
+                  selectedSchoolId === school.id
+                    ? 'bg-darkBlue text-white shadow-md'
+                    : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                {school.name}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Carousel Container */}
         <div className="relative max-w-6xl mx-auto px-2 md:px-12">
