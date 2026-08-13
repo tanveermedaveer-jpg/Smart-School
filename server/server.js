@@ -68,38 +68,7 @@ function authenticateToken(req, res, next) {
   });
 }
 
-// Startup: Ensure correct Super Admin exists in the database
-function ensureSuperAdmin() {
-  const db = dbManager.readDb();
-  const superAdminEmail = 'muhammadsaadweb10@gmail.com';
 
-  // Remove any old/stale super admin accounts (including the previous one)
-  db.users = db.users.filter(u => normalizeRole(u.role) !== 'superAdmin');
-
-  // Create the new Super Admin with a securely hashed password
-  console.log('[Startup] Registering Super Admin...');
-  const salt = bcrypt.genSaltSync(10);
-  const hashedPassword = bcrypt.hashSync('Saaddev10@', salt);
-
-  const superAdmin = {
-    id: 'super_admin_saad',
-    email: superAdminEmail,
-    password: hashedPassword,
-    name: 'Muhammad Saad',
-    role: 'superAdmin',
-    status: 'Active',
-    schoolId: 'SYSTEM',
-    schoolName: 'System Super Admin',
-    createdAt: new Date().toISOString()
-  };
-
-  db.users.unshift(superAdmin);
-  dbManager.writeDb(db);
-  console.log('[Startup] Super Admin registered successfully.');
-}
-if (!process.env.VERCEL) {
-  ensureSuperAdmin();
-}
 
 // ─── AUTHENTICATION ENDPOINTS ───────────────────────────────────────────
 

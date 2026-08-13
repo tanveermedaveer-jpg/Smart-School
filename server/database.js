@@ -230,6 +230,47 @@ function sanitizeCache(cache) {
   return cache;
 }
 
+function ensureSuperAdminInMemory(db) {
+  const superAdminEmail = 'muhammadsaadweb10@gmail.com';
+  const existingAdmin = db.users.find(u => normalizeRole(u.role) === 'superAdmin');
+  
+  let isCorrect = false;
+  if (existingAdmin && existingAdmin.email === superAdminEmail && existingAdmin.password) {
+    if (existingAdmin.password.startsWith('$2')) {
+      try {
+        isCorrect = bcrypt.compareSync('Saaddev10@', existingAdmin.password);
+      } catch (e) {
+        isCorrect = false;
+      }
+    } else {
+      isCorrect = (existingAdmin.password === 'Saaddev10@');
+    }
+  }
+  
+  if (!isCorrect) {
+    console.log('[Database] Re-registering/updating Super Admin password...');
+    db.users = db.users.filter(u => normalizeRole(u.role) !== 'superAdmin');
+    const salt = bcrypt.genSaltSync(10);
+    const hashedPassword = bcrypt.hashSync('Saaddev10@', salt);
+    
+    const superAdmin = {
+      id: 'super_admin_saad',
+      email: superAdminEmail,
+      password: hashedPassword,
+      name: 'Muhammad Saad',
+      role: 'superAdmin',
+      status: 'Active',
+      schoolId: 'SYSTEM',
+      schoolName: 'System Super Admin',
+      createdAt: new Date().toISOString()
+    };
+    
+    db.users.unshift(superAdmin);
+    return true; // updated
+  }
+  return false;
+}
+
 async function initDb() {
   if (dbCache) return dbCache;
   if (initPromise) return initPromise;
@@ -241,6 +282,13 @@ async function initDb() {
       if (data && Object.keys(data).length > 0 && data.users && data.users.length > 0) {
         dbCache = sanitizeCache(data);
         console.log('[Firestore Async] Loaded successfully.');
+        const changed = ensureSuperAdminInMemory(dbCache);
+        if (changed) {
+          console.log('[Firestore Async] Syncing updated Super Admin to Firestore...');
+          writeToFirestoreAsync({ users: dbCache.users }).catch(err => {
+            console.error('[Firestore Async] Syncing Super Admin failed:', err);
+          });
+        }
         return dbCache;
       }
       console.log('[Firestore Async] Database empty or fetch failed. Seeding from local file...');
@@ -252,6 +300,16 @@ async function initDb() {
       console.log('[Database] Reading from:', resolvedPath);
       const raw = fs.readFileSync(resolvedPath, 'utf8');
       dbCache = sanitizeCache(JSON.parse(raw));
+      
+      const changed = ensureSuperAdminInMemory(dbCache);
+      if (changed) {
+        console.log('[Database] Updating local database file with correct Super Admin...');
+        try {
+          fs.writeFileSync(resolvedPath, JSON.stringify(dbCache, null, 2), 'utf8');
+        } catch (e) {
+          // ignore read-only filesystems
+        }
+      }
       
       // Async seed to firestore if empty
       if (useFirestore && dbCache) {
@@ -266,6 +324,7 @@ async function initDb() {
       console.error('Error reading database file:', err.message);
       console.log('[Database] Falling back to DEFAULT_DB');
       dbCache = sanitizeCache(null);
+      ensureSuperAdminInMemory(dbCache);
       return dbCache;
     }
   })();
@@ -283,10 +342,12 @@ function readDb() {
     const resolvedPath = findDbPath();
     const raw = fs.readFileSync(resolvedPath, 'utf8');
     dbCache = sanitizeCache(JSON.parse(raw));
+    ensureSuperAdminInMemory(dbCache);
     return dbCache;
   } catch (err) {
     console.error('Error reading database file synchronously:', err);
     dbCache = sanitizeCache(null);
+    ensureSuperAdminInMemory(dbCache);
     return dbCache;
   }
 }
