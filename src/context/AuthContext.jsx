@@ -5,7 +5,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { normalizeRole } from '../utils/db';
+import { normalizeRole, BASE_URL } from '../utils/db';
 
 const AuthContext = createContext(null);
 
@@ -43,12 +43,9 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     let response;
-    const baseApiUrl = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-      ? (window.location.port === '5199' ? 'http://localhost:5001/api' : `${window.location.origin}/api`)
-      : '/api';
 
     try {
-      response = await fetch(`${baseApiUrl}/auth/login`, {
+      response = await fetch(`${BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

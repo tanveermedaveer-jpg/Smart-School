@@ -5,6 +5,7 @@ import './index.css'
 import App from './App.jsx'
 import { ThemeProvider } from './context/ThemeContext.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
+import { BASE_URL } from './utils/db';
 
 // ─── LOCAL STORAGE / SESSION STORAGE / INDEXEDDB VIRTUALIZATION & CLEANUP ───
 const SCHOOL_DATA_KEYS = new Set([
@@ -117,11 +118,7 @@ localStorage.setItem = function(key, value) {
         const isTopLevel = ['admissions', 'demoRequests', 'contactMessages', 'systemLogs', 'superAdminNotifications', 'superAdminAcademicTemplates', 'parentSupportConversations'].includes(key);
         const targetSchool = isTopLevel ? '' : schoolId;
 
-        const baseApiUrl = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-          ? (window.location.port === '5199' ? 'http://localhost:5001/api' : `${window.location.origin}/api`)
-          : '/api';
-
-        await fetch(`${baseApiUrl}/collections/${key}?schoolId=${targetSchool}`, {
+        await fetch(`${BASE_URL}/collections/${key}?schoolId=${targetSchool}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

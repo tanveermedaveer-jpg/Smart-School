@@ -5,7 +5,7 @@ import QrAttendanceScanner from '../../components/QrAttendanceScanner';
 import toast from 'react-hot-toast';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
-import { getAttendance, saveAttendance } from '../../utils/db';
+import { getAttendance, saveAttendance, BASE_URL } from '../../utils/db';
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
@@ -104,7 +104,7 @@ const Dashboard = () => {
     
     try {
       const token = sessionStorage.getItem('jwtToken');
-      const res = await fetch(`http://localhost:5001/api/qr-sessions/${sessionId}`, {
+      const res = await fetch(`${BASE_URL}/qr-sessions/${sessionId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -141,7 +141,7 @@ const Dashboard = () => {
       }
       
       // 4. Update session log in backend
-      const scanRes = await fetch(`http://localhost:5001/api/qr-sessions/${sessionId}/scan`, {
+      const scanRes = await fetch(`${BASE_URL}/qr-sessions/${sessionId}/scan`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

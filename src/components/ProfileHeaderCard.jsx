@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User as UserIcon, CheckCircle, Mail, Phone, Building2, Hash, Camera, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { BASE_URL } from '../utils/db';
 // Removed Firebase imports, using HTTP fetch to Node.js backend
 
 const ProfileHeaderCard = ({ name, role, status = 'Active', details = [] }) => {
@@ -15,7 +16,7 @@ const ProfileHeaderCard = ({ name, role, status = 'Active', details = [] }) => {
       if (authUser && authUser.id) {
         try {
           const token = sessionStorage.getItem('jwtToken');
-          const res = await fetch(`http://localhost:5001/api/users/${authUser.id}`, {
+          const res = await fetch(`${BASE_URL}/users/${authUser.id}`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -69,7 +70,7 @@ const ProfileHeaderCard = ({ name, role, status = 'Active', details = [] }) => {
         if (authUser && authUser.id) {
           try {
             const token = sessionStorage.getItem('jwtToken');
-            const res = await fetch(`http://localhost:5001/api/users/${authUser.id}`, {
+            const res = await fetch(`${BASE_URL}/users/${authUser.id}`, {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
@@ -105,7 +106,7 @@ const ProfileHeaderCard = ({ name, role, status = 'Active', details = [] }) => {
         setAvatar(null);
         if (authUser && authUser.id) {
           const token = sessionStorage.getItem('jwtToken');
-          const res = await fetch(`http://localhost:5001/api/users/${authUser.id}`, {
+          const res = await fetch(`${BASE_URL}/users/${authUser.id}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',

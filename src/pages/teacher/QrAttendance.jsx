@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { QrCode, Users, Clock, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { BASE_URL } from '../../utils/db';
 // Using Node.js HTTP endpoints for session handling
 
 const QrAttendance = () => {
@@ -56,7 +57,7 @@ const QrAttendance = () => {
     
     try {
       const token = sessionStorage.getItem('jwtToken');
-      const res = await fetch('http://localhost:5001/api/qr-sessions', {
+      const res = await fetch(`${BASE_URL}/qr-sessions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -84,7 +85,7 @@ const QrAttendance = () => {
     const fetchSession = async () => {
       try {
         const token = sessionStorage.getItem('jwtToken');
-        const res = await fetch(`http://localhost:5001/api/qr-sessions/${qrSession.id}`, {
+        const res = await fetch(`${BASE_URL}/qr-sessions/${qrSession.id}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
