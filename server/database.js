@@ -15,6 +15,13 @@ function normalizeRole(role) {
 }
 
 const DB_PATH = path.join(process.cwd(), 'server', 'data', 'db.json');
+const DB_PATH_ALT = path.join(__dirname, 'data', 'db.json');
+
+function findDbPath() {
+  if (fs.existsSync(DB_PATH)) return DB_PATH;
+  if (fs.existsSync(DB_PATH_ALT)) return DB_PATH_ALT;
+  return DB_PATH; // default fallback
+}
 
 function ensureDb() {
   const dir = path.dirname(DB_PATH);
@@ -57,7 +64,6 @@ function ensureDb() {
   }
 }
 
-const cp = require('child_process');
 const useFirestore = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1' || process.env.USE_FIRESTORE === 'true';
 
 let dbCache = null;
@@ -122,11 +128,19 @@ async function fetchAllFromFirestoreAsync() {
   const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1/projects/smart-school-management-66f78/databases/(default)/documents/database';
   
   try {
+    // Quick connectivity check: fetch 'users' first to verify access
+    const probeRes = await fetch(`${FIRESTORE_BASE}/users`, { headers });
+    if (probeRes.status === 403) {
+      console.log('[Firestore Async] Permission denied (403). Skipping Firestore.');
+      return null;
+    }
+
     const promises = keys.map(async key => {
       try {
-        const res = await fetch(`${FIRESTORE_BASE}/${key}`, { headers });
+        // Reuse probe result for 'users' to avoid duplicate fetch
+        const res = key === 'users' ? probeRes : await fetch(`${FIRESTORE_BASE}/${key}`, { headers });
         if (res.status === 404) return [key, []];
-        const json = await res.json();
+        const json = key === 'users' ? await probeRes.json() : await res.json();
         if (json.fields && json.fields.data && json.fields.data.stringValue) {
           return [key, JSON.parse(json.fields.data.stringValue)];
         }
@@ -234,7 +248,9 @@ async function initDb() {
     
     ensureDb();
     try {
-      const raw = fs.readFileSync(DB_PATH, 'utf8');
+      const resolvedPath = findDbPath();
+      console.log('[Database] Reading from:', resolvedPath);
+      const raw = fs.readFileSync(resolvedPath, 'utf8');
       dbCache = sanitizeCache(JSON.parse(raw));
       
       // Async seed to firestore if empty
@@ -247,7 +263,8 @@ async function initDb() {
       
       return dbCache;
     } catch (err) {
-      console.error('Error reading database file:', err);
+      console.error('Error reading database file:', err.message);
+      console.log('[Database] Falling back to DEFAULT_DB');
       dbCache = sanitizeCache(null);
       return dbCache;
     }
@@ -263,7 +280,8 @@ function readDb() {
   // Synchronous fallback for local dev startup (non-vercel, non-async context)
   ensureDb();
   try {
-    const raw = fs.readFileSync(DB_PATH, 'utf8');
+    const resolvedPath = findDbPath();
+    const raw = fs.readFileSync(resolvedPath, 'utf8');
     dbCache = sanitizeCache(JSON.parse(raw));
     return dbCache;
   } catch (err) {

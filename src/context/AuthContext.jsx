@@ -61,11 +61,23 @@ export function AuthProvider({ children }) {
       throw err;
     }
 
+    // Check if Vercel deployment protection intercepted the request
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      console.error('[Auth] Non-JSON response received. Status:', response.status, 'Content-Type:', contentType);
+      throw new Error('Server returned an unexpected response. The API may not be reachable. Please check your deployment settings.');
+    }
+
     let data;
     try {
       data = await response.json();
     } catch (parseError) {
       throw new Error('Server returned an invalid response. Please try again.');
+    }
+
+    // Detect Vercel deployment protection response
+    if (data.protection && data.protection.vercel_auth_enabled) {
+      throw new Error('Deployment protection is blocking API access. Please disable Vercel Authentication in your project settings.');
     }
 
     if (!response.ok) {

@@ -1,0 +1,630 @@
+{
+  "users": [
+    {
+      "id": "super_admin_saad",
+      "email": "muhammadsaadweb10@gmail.com",
+      "password": "$2a$10$Z9k6j7SmWmx8wCAojTYVZ.IQFwqBo36nx6gw.z.2QgTLnjh684kN2",
+      "name": "Muhammad Saad",
+      "role": "superAdmin",
+      "status": "Active",
+      "schoolId": "SYSTEM",
+      "schoolName": "System Super Admin",
+      "createdAt": "2026-08-13T07:42:18.194Z"
+    }
+  ],
+  "schools": [],
+  "admissions": [],
+  "demoRequests": [],
+  "contactMessages": [],
+  "systemLogs": [],
+  "superAdminNotifications": [],
+  "superAdminAcademicTemplates": [
+    {
+      "id": "pakistan-school-template",
+      "name": "Pakistan School Template",
+      "status": "Active",
+      "classes": [
+        {
+          "id": "class-1",
+          "name": "Class 1",
+          "subjects": [
+            {
+              "id": "sub-1-0",
+              "name": "English",
+              "code": "ENG-01",
+              "enabled": true
+            },
+            {
+              "id": "sub-1-1",
+              "name": "Urdu",
+              "code": "URD-01",
+              "enabled": true
+            },
+            {
+              "id": "sub-1-2",
+              "name": "Mathematics",
+              "code": "MTH-01",
+              "enabled": true
+            },
+            {
+              "id": "sub-1-3",
+              "name": "General Knowledge",
+              "code": "GK-01",
+              "enabled": true
+            },
+            {
+              "id": "sub-1-4",
+              "name": "Islamiat",
+              "code": "ISL-01",
+              "enabled": true
+            }
+          ]
+        },
+        {
+          "id": "class-2",
+          "name": "Class 2",
+          "subjects": [
+            {
+              "id": "sub-2-0",
+              "name": "English",
+              "code": "ENG-02",
+              "enabled": true
+            },
+            {
+              "id": "sub-2-1",
+              "name": "Urdu",
+              "code": "URD-02",
+              "enabled": true
+            },
+            {
+              "id": "sub-2-2",
+              "name": "Mathematics",
+              "code": "MTH-02",
+              "enabled": true
+            },
+            {
+              "id": "sub-2-3",
+              "name": "General Knowledge",
+              "code": "GK-02",
+              "enabled": true
+            },
+            {
+              "id": "sub-2-4",
+              "name": "Islamiat",
+              "code": "ISL-02",
+              "enabled": true
+            }
+          ]
+        },
+        {
+          "id": "class-3",
+          "name": "Class 3",
+          "subjects": [
+            {
+              "id": "sub-3-0",
+              "name": "English",
+              "code": "ENG-03",
+              "enabled": true
+            },
+            {
+              "id": "sub-3-1",
+              "name": "Urdu",
+              "code": "URD-03",
+              "enabled": true
+            },
+            {
+              "id": "sub-3-2",
+              "name": "Mathematics",
+              "code": "MTH-03",
+              "enabled": true
+            },
+            {
+              "id": "sub-3-3",
+              "name": "General Knowledge",
+              "code": "GK-03",
+              "enabled": true
+            },
+            {
+              "id": "sub-3-4",
+              "name": "Islamiat",
+              "code": "ISL-03",
+              "enabled": true
+            }
+          ]
+        },
+        {
+          "id": "class-4",
+          "name": "Class 4",
+          "subjects": [
+            {
+              "id": "sub-4-0",
+              "name": "English",
+              "code": "ENG-04",
+              "enabled": true
+            },
+            {
+              "id": "sub-4-1",
+              "name": "Urdu",
+              "code": "URD-04",
+              "enabled": true
+            },
+            {
+              "id": "sub-4-2",
+              "name": "Mathematics",
+              "code": "MTH-04",
+              "enabled": true
+            },
+            {
+              "id": "sub-4-3",
+              "name": "General Science",
+              "code": "SCI-04",
+              "enabled": true
+            },
+            {
+              "id": "sub-4-4",
+              "name": "Social Studies",
+              "code": "SST-04",
+              "enabled": true
+            },
+            {
+              "id": "sub-4-5",
+              "name": "Islamiat",
+              "code": "ISL-04",
+              "enabled": true
+            }
+          ]
+        },
+        {
+          "id": "class-5",
+          "name": "Class 5",
+          "subjects": [
+            {
+              "id": "sub-5-0",
+              "name": "English",
+              "code": "ENG-05",
+              "enabled": true
+            },
+            {
+              "id": "sub-5-1",
+              "name": "Urdu",
+              "code": "URD-05",
+              "enabled": true
+            },
+            {
+              "id": "sub-5-2",
+              "name": "Mathematics",
+              "code": "MTH-05",
+              "enabled": true
+            },
+            {
+              "id": "sub-5-3",
+              "name": "General Science",
+              "code": "SCI-05",
+              "enabled": true
+            },
+            {
+              "id": "sub-5-4",
+              "name": "Social Studies",
+              "code": "SST-05",
+              "enabled": true
+            },
+            {
+              "id": "sub-5-5",
+              "name": "Islamiat",
+              "code": "ISL-05",
+              "enabled": true
+            }
+          ]
+        },
+        {
+          "id": "class-6",
+          "name": "Class 6",
+          "subjects": [
+            {
+              "id": "sub-6-0",
+              "name": "English",
+              "code": "ENG-06",
+              "enabled": true
+            },
+            {
+              "id": "sub-6-1",
+              "name": "Urdu",
+              "code": "URD-06",
+              "enabled": true
+            },
+            {
+              "id": "sub-6-2",
+              "name": "Mathematics",
+              "code": "MTH-06",
+              "enabled": true
+            },
+            {
+              "id": "sub-6-3",
+              "name": "Science",
+              "code": "SCI-06",
+              "enabled": true
+            },
+            {
+              "id": "sub-6-4",
+              "name": "History",
+              "code": "HIS-06",
+              "enabled": true
+            },
+            {
+              "id": "sub-6-5",
+              "name": "Geography",
+              "code": "GEO-06",
+              "enabled": true
+            },
+            {
+              "id": "sub-6-6",
+              "name": "Computer Science",
+              "code": "CS-06",
+              "enabled": true
+            },
+            {
+              "id": "sub-6-7",
+              "name": "Islamiat",
+              "code": "ISL-06",
+              "enabled": true
+            }
+          ]
+        },
+        {
+          "id": "class-7",
+          "name": "Class 7",
+          "subjects": [
+            {
+              "id": "sub-7-0",
+              "name": "English",
+              "code": "ENG-07",
+              "enabled": true
+            },
+            {
+              "id": "sub-7-1",
+              "name": "Urdu",
+              "code": "URD-07",
+              "enabled": true
+            },
+            {
+              "id": "sub-7-2",
+              "name": "Mathematics",
+              "code": "MTH-07",
+              "enabled": true
+            },
+            {
+              "id": "sub-7-3",
+              "name": "Science",
+              "code": "SCI-07",
+              "enabled": true
+            },
+            {
+              "id": "sub-7-4",
+              "name": "History",
+              "code": "HIS-07",
+              "enabled": true
+            },
+            {
+              "id": "sub-7-5",
+              "name": "Geography",
+              "code": "GEO-07",
+              "enabled": true
+            },
+            {
+              "id": "sub-7-6",
+              "name": "Computer Science",
+              "code": "CS-07",
+              "enabled": true
+            },
+            {
+              "id": "sub-7-7",
+              "name": "Islamiat",
+              "code": "ISL-07",
+              "enabled": true
+            }
+          ]
+        },
+        {
+          "id": "class-8",
+          "name": "Class 8",
+          "subjects": [
+            {
+              "id": "sub-8-0",
+              "name": "English",
+              "code": "ENG-08",
+              "enabled": true
+            },
+            {
+              "id": "sub-8-1",
+              "name": "Urdu",
+              "code": "URD-08",
+              "enabled": true
+            },
+            {
+              "id": "sub-8-2",
+              "name": "Mathematics",
+              "code": "MTH-08",
+              "enabled": true
+            },
+            {
+              "id": "sub-8-3",
+              "name": "Science",
+              "code": "SCI-08",
+              "enabled": true
+            },
+            {
+              "id": "sub-8-4",
+              "name": "History",
+              "code": "HIS-08",
+              "enabled": true
+            },
+            {
+              "id": "sub-8-5",
+              "name": "Geography",
+              "code": "GEO-08",
+              "enabled": true
+            },
+            {
+              "id": "sub-8-6",
+              "name": "Computer Science",
+              "code": "CS-08",
+              "enabled": true
+            },
+            {
+              "id": "sub-8-7",
+              "name": "Islamiat",
+              "code": "ISL-08",
+              "enabled": true
+            }
+          ]
+        },
+        {
+          "id": "class-9",
+          "name": "Class 9",
+          "groups": [
+            {
+              "id": "group-sci-9",
+              "name": "Science Group",
+              "subjects": [
+                {
+                  "id": "sub-9-sci-0",
+                  "name": "English",
+                  "code": "ENG-9",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-9-sci-1",
+                  "name": "Urdu",
+                  "code": "URD-9",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-9-sci-2",
+                  "name": "Mathematics",
+                  "code": "MTH-9",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-9-sci-3",
+                  "name": "Physics",
+                  "code": "PHY-9",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-9-sci-4",
+                  "name": "Chemistry",
+                  "code": "CHM-9",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-9-sci-5",
+                  "name": "Biology",
+                  "code": "BIO-9",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-9-sci-6",
+                  "name": "Islamiat",
+                  "code": "ISL-9",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-9-sci-7",
+                  "name": "Pakistan Studies",
+                  "code": "PST-9",
+                  "enabled": true
+                }
+              ]
+            },
+            {
+              "id": "group-cs-9",
+              "name": "Computer Science Group",
+              "subjects": [
+                {
+                  "id": "sub-9-cs-0",
+                  "name": "English",
+                  "code": "ENG-9",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-9-cs-1",
+                  "name": "Urdu",
+                  "code": "URD-9",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-9-cs-2",
+                  "name": "Mathematics",
+                  "code": "MTH-9",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-9-cs-3",
+                  "name": "Physics",
+                  "code": "PHY-9",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-9-cs-4",
+                  "name": "Chemistry",
+                  "code": "CHM-9",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-9-cs-5",
+                  "name": "Computer Science",
+                  "code": "CS-9",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-9-cs-6",
+                  "name": "Islamiat",
+                  "code": "ISL-9",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-9-cs-7",
+                  "name": "Pakistan Studies",
+                  "code": "PST-9",
+                  "enabled": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "class-10",
+          "name": "Class 10",
+          "groups": [
+            {
+              "id": "group-sci-10",
+              "name": "Science Group",
+              "subjects": [
+                {
+                  "id": "sub-10-sci-0",
+                  "name": "English",
+                  "code": "ENG-10",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-10-sci-1",
+                  "name": "Urdu",
+                  "code": "URD-10",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-10-sci-2",
+                  "name": "Mathematics",
+                  "code": "MTH-10",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-10-sci-3",
+                  "name": "Physics",
+                  "code": "PHY-10",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-10-sci-4",
+                  "name": "Chemistry",
+                  "code": "CHM-10",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-10-sci-5",
+                  "name": "Biology",
+                  "code": "BIO-10",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-10-sci-6",
+                  "name": "Islamiat",
+                  "code": "ISL-10",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-10-sci-7",
+                  "name": "Pakistan Studies",
+                  "code": "PST-10",
+                  "enabled": true
+                }
+              ]
+            },
+            {
+              "id": "group-cs-10",
+              "name": "Computer Science Group",
+              "subjects": [
+                {
+                  "id": "sub-10-cs-0",
+                  "name": "English",
+                  "code": "ENG-10",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-10-cs-1",
+                  "name": "Urdu",
+                  "code": "URD-10",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-10-cs-2",
+                  "name": "Mathematics",
+                  "code": "MTH-10",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-10-cs-3",
+                  "name": "Physics",
+                  "code": "PHY-10",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-10-cs-4",
+                  "name": "Chemistry",
+                  "code": "CHM-10",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-10-cs-5",
+                  "name": "Computer Science",
+                  "code": "CS-10",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-10-cs-6",
+                  "name": "Islamiat",
+                  "code": "ISL-10",
+                  "enabled": true
+                },
+                {
+                  "id": "sub-10-cs-7",
+                  "name": "Pakistan Studies",
+                  "code": "PST-10",
+                  "enabled": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "parentSupportConversations": [],
+  "classes": [],
+  "subjects": [],
+  "teacherAssignments": [],
+  "feeStructures": [],
+  "monthlyFees": [],
+  "receipts": [],
+  "exams": [],
+  "results": [],
+  "notices": [],
+  "gallery": [],
+  "fees": [],
+  "timetable": [],
+  "gradeScale": [],
+  "settings": [],
+  "attendance": {},
+  "qrSessions": [],
+  "homework": []
+}
