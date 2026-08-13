@@ -18,17 +18,10 @@ if not exist node_modules (
     call npm install
 )
 
-:: Check if node_modules exists in server
-if not exist server\node_modules (
-    echo [Backend] Installing server dependencies...
-    cd server
-    call npm install
-    cd ..
-)
-
+:: Launching servers
 echo.
 echo Launching Backend Server on port 5001...
-start "Smart School Backend" cmd /k "cd server && npm start"
+start "Smart School Backend" cmd /k "node server/server.js"
 
 echo Launching Frontend Development Server on http://localhost:5199...
 start "Smart School Frontend" cmd /k "npm run dev"
