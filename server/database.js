@@ -14,7 +14,7 @@ function normalizeRole(role) {
   return r;
 }
 
-const DB_PATH = path.join(__dirname, 'data', 'db.json');
+const DB_PATH = path.join(process.cwd(), 'server', 'data', 'db.json');
 
 function ensureDb() {
   const dir = path.dirname(DB_PATH);
@@ -60,7 +60,7 @@ let dbCache = null;
 
 function fetchAllFromFirestore() {
   try {
-    const result = cp.spawnSync(process.execPath, [path.join(__dirname, 'readDb.js')], {
+    const result = cp.spawnSync(process.execPath, [path.join(process.cwd(), 'server', 'readDb.js')], {
       encoding: 'utf8',
       env: process.env,
       maxBuffer: 50 * 1024 * 1024 // 50MB safe buffer
@@ -102,7 +102,7 @@ function readDb() {
       console.log('[Firestore Admin] Seeding database to Firestore...');
       try {
         const child = cp.spawn(process.execPath, [
-          path.join(__dirname, 'writeDb.js')
+          path.join(process.cwd(), 'server', 'writeDb.js')
         ], { 
           stdio: ['pipe', 'ignore', 'ignore'], 
           detached: true,
@@ -148,7 +148,7 @@ function writeDb(data) {
       console.log('[Firestore Admin] Syncing changed collections:', Object.keys(changedData));
       try {
         const result = cp.spawnSync(process.execPath, [
-          path.join(__dirname, 'writeDb.js')
+          path.join(process.cwd(), 'server', 'writeDb.js')
         ], {
           encoding: 'utf8',
           input: JSON.stringify(changedData),
