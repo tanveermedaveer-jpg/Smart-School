@@ -23,6 +23,19 @@ const JWT_SECRET = 'smart_school_jwt_secret_key_2026';
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
+app.use((req, res, next) => {
+  // Normalize req.url to ensure it always starts with /api to match Express routes
+  if (req.url) {
+    if (req.url.startsWith('/api/index.js')) {
+      req.url = req.url.replace('/api/index.js', '/api');
+    }
+    if (!req.url.startsWith('/api')) {
+      req.url = '/api' + req.url;
+    }
+  }
+  next();
+});
+
 app.use(async (req, res, next) => {
   try {
     await dbManager.initDb();
