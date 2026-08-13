@@ -18,38 +18,42 @@ const DB_PATH = path.join(process.cwd(), 'server', 'data', 'db.json');
 
 function ensureDb() {
   const dir = path.dirname(DB_PATH);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-  if (!fs.existsSync(DB_PATH)) {
-    fs.writeFileSync(DB_PATH, JSON.stringify({
-      users: [],
-      schools: [],
-      admissions: [],
-      demoRequests: [],
-      contactMessages: [],
-      systemLogs: [],
-      superAdminNotifications: [],
-      superAdminAcademicTemplates: [],
-      parentSupportConversations: [],
-      classes: [],
-      subjects: [],
-      teacherAssignments: [],
-      feeStructures: [],
-      monthlyFees: [],
-      receipts: [],
-      exams: [],
-      results: [],
-      notices: [],
-      gallery: [],
-      fees: [],
-      timetable: [],
-      gradeScale: [],
-      settings: [],
-      attendance: {},
-      qrSessions: [],
-      homework: []
-    }, null, 2), 'utf8');
+  try {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    if (!fs.existsSync(DB_PATH)) {
+      fs.writeFileSync(DB_PATH, JSON.stringify({
+        users: [],
+        schools: [],
+        admissions: [],
+        demoRequests: [],
+        contactMessages: [],
+        systemLogs: [],
+        superAdminNotifications: [],
+        superAdminAcademicTemplates: [],
+        parentSupportConversations: [],
+        classes: [],
+        subjects: [],
+        teacherAssignments: [],
+        feeStructures: [],
+        monthlyFees: [],
+        receipts: [],
+        exams: [],
+        results: [],
+        notices: [],
+        gallery: [],
+        fees: [],
+        timetable: [],
+        gradeScale: [],
+        settings: [],
+        attendance: {},
+        qrSessions: [],
+        homework: []
+      }, null, 2), 'utf8');
+    }
+  } catch (err) {
+    console.warn('[Database] ensureDb filesystem operation skipped (expected on read-only environments like Vercel):', err.message);
   }
 }
 

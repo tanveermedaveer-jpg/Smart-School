@@ -5,7 +5,11 @@
   ],
   "functions": {
     "api/index.cjs": {
-      "includeFiles": "server/**"
+      "includeFiles": [
+        "server/readDb.js",
+        "server/writeDb.js",
+        "server/data/db.json"
+      ]
     }
   }
 }
