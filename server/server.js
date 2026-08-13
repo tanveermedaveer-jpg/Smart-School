@@ -87,7 +87,9 @@ function ensureSuperAdmin() {
   dbManager.writeDb(db);
   console.log('[Startup] Super Admin registered successfully.');
 }
-ensureSuperAdmin();
+if (!process.env.VERCEL) {
+  ensureSuperAdmin();
+}
 
 // ─── AUTHENTICATION ENDPOINTS ───────────────────────────────────────────
 
