@@ -67,7 +67,17 @@ const SchoolAdmins = () => {
   };
 
   const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    let updatedFormData = { ...formData, [name]: value };
+
+    if (name === 'schoolId' && value && !editingId) {
+      const selectedSchool = schools.find(s => s.id.toString() === value.toString());
+      if (selectedSchool) {
+        const schoolNameSanitized = selectedSchool.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        updatedFormData.username = `admin_${schoolNameSanitized}`;
+      }
+    }
+    setFormData(updatedFormData);
   };
 
   const handleSubmit = async (e) => {
@@ -93,10 +103,28 @@ const SchoolAdmins = () => {
 
   const openModal = (user = null) => {
     if (user) {
-      setFormData(user);
+      setFormData({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        username: user.username || '',
+        password: '',
+        schoolId: user.schoolId || '',
+        status: user.status || 'Active',
+        role: user.role || 'school_admin'
+      });
       setEditingId(user.id);
     } else {
-      setFormData(initialFormState);
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        username: '',
+        password: '',
+        schoolId: '',
+        status: 'Active',
+        role: 'school_admin'
+      });
       setEditingId(null);
     }
     setIsModalOpen(true);
@@ -210,23 +238,23 @@ const SchoolAdmins = () => {
                 <X className="w-6 h-6" />
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-6 space-y-4" autoComplete="off">
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                  <input required type="text" name="name" value={formData.name} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-greenAccent focus:border-greenAccent outline-none" />
+                  <input required type="text" name="name" value={formData.name} onChange={handleInputChange} autoComplete="off" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-greenAccent focus:border-greenAccent outline-none" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input required type="email" name="email" value={formData.email} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-greenAccent focus:border-greenAccent outline-none" />
+                  <input required type="email" name="email" value={formData.email} onChange={handleInputChange} autoComplete="off" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-greenAccent focus:border-greenAccent outline-none" />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                  <input required type="tel" name="phone" value={formData.phone} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-greenAccent focus:border-greenAccent outline-none" />
+                  <input required type="tel" name="phone" value={formData.phone} onChange={handleInputChange} autoComplete="off" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-greenAccent focus:border-greenAccent outline-none" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Assign School</label>
@@ -242,11 +270,11 @@ const SchoolAdmins = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                  <input required type="text" name="username" value={formData.username} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-greenAccent focus:border-greenAccent outline-none" />
+                  <input required type="text" name="username" value={formData.username} onChange={handleInputChange} autoComplete="off" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-greenAccent focus:border-greenAccent outline-none" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                  <PasswordInput required={!editingId} name="password" value={formData.password} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-greenAccent focus:border-greenAccent outline-none" />
+                  <PasswordInput required={!editingId} name="password" value={formData.password} onChange={handleInputChange} autoComplete="new-password" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-greenAccent focus:border-greenAccent outline-none" />
                 </div>
               </div>
 

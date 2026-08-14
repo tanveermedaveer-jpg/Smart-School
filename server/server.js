@@ -269,18 +269,21 @@ app.put('/api/users/:userId', authenticateToken, (req, res) => {
   }
 
   // Update fields
-  const updatedUser = { ...db.users[idx], ...req.body };
+  const { password, ...bodyWithoutPassword } = req.body;
+  const updatedUser = { ...db.users[idx], ...bodyWithoutPassword };
   
-  // If password is changed, hash it
-  if (req.body.password && req.body.password !== db.users[idx].password) {
-    const salt = bcrypt.genSaltSync(10);
-    updatedUser.password = bcrypt.hashSync(req.body.password, salt);
+  // If password is provided and not empty, check and hash it
+  if (password && password.toString().trim() !== '') {
+    if (password !== db.users[idx].password) {
+      const salt = bcrypt.genSaltSync(10);
+      updatedUser.password = bcrypt.hashSync(password, salt);
+    }
   }
 
   db.users[idx] = updatedUser;
   dbManager.writeDb(db);
 
-  const { password: _, ...profile } = updatedUser;
+  const { password: _, parentPassword: __, ...profile } = updatedUser;
   res.json(profile);
 });
 
