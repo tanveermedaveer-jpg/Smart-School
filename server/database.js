@@ -459,6 +459,43 @@ function getCollection(key, schoolId) {
   });
 }
 
+function performSchoolDeletionCascade(db, deletedSchoolId) {
+  if (!deletedSchoolId) return;
+  const sidStr = deletedSchoolId.toString();
+
+  // 1. Delete all users belonging to this school
+  db.users = (db.users || []).filter(u => {
+    const uSchoolId = u.schoolId || u.school_id;
+    return !uSchoolId || uSchoolId.toString() !== sidStr;
+  });
+
+  // 2. Delete all other collections' data for this school
+  const collectionsToClean = [
+    'admissions', 'classes', 'subjects', 'teacherAssignments',
+    'feeStructures', 'monthlyFees', 'receipts', 'exams', 'results',
+    'notices', 'gallery', 'fees', 'timetable', 'gradeScale', 'settings',
+    'qrSessions', 'homework', 'schoolAdminAttendance'
+  ];
+
+  collectionsToClean.forEach(key => {
+    if (db[key]) {
+      if (Array.isArray(db[key])) {
+        db[key] = db[key].filter(item => {
+          const itemSchoolId = item.schoolId || item.school_id;
+          return !itemSchoolId || itemSchoolId.toString() !== sidStr;
+        });
+      } else if (typeof db[key] === 'object') {
+        if (db[key].schoolId || db[key].school_id) {
+          const itemSchoolId = db[key].schoolId || db[key].school_id;
+          if (itemSchoolId.toString() === sidStr) {
+            db[key] = {};
+          }
+        }
+      }
+    }
+  });
+}
+
 function saveCollection(key, schoolId, updatedItems) {
   const db = readDb();
   const prop = KEY_MAP[key] || key;
@@ -538,6 +575,16 @@ function saveCollection(key, schoolId, updatedItems) {
     }
   } else {
     if (!schoolId || schoolId === 'SYSTEM') {
+      if (prop === 'schools') {
+        const currentSchools = db.schools || [];
+        const newSchoolIds = new Set(items.map(s => s.id && s.id.toString()));
+        currentSchools.forEach(s => {
+          if (s.id && !newSchoolIds.has(s.id.toString())) {
+            console.log(`[Database] School ${s.name} (${s.id}) was deleted. Triggering cascading cleanup...`);
+            performSchoolDeletionCascade(db, s.id);
+          }
+        });
+      }
       db[prop] = items;
     } else {
       // Keep other schools' data, replace only this school's data
@@ -564,5 +611,6 @@ module.exports = {
   initDb,
   getCollection,
   saveCollection,
+  performSchoolDeletionCascade,
   KEY_MAP
 };

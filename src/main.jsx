@@ -7,6 +7,25 @@ import { ThemeProvider } from './context/ThemeContext.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import { BASE_URL } from './utils/db';
 
+// Global fetch interceptor to catch 401/403 and force logout
+const originalFetch = window.fetch;
+window.fetch = async function (...args) {
+  const response = await originalFetch(...args);
+  if (response.status === 401 || response.status === 403) {
+    const token = sessionStorage.getItem('jwtToken');
+    if (token) {
+      sessionStorage.removeItem('jwtToken');
+      sessionStorage.removeItem('authUser');
+      sessionStorage.removeItem('superAdminAuth');
+      const pathname = window.location.pathname;
+      if (pathname !== '/login' && pathname !== '/super-admin/login' && pathname !== '/') {
+        window.location.href = '/login';
+      }
+    }
+  }
+  return response;
+};
+
 // ─── LOCAL STORAGE / SESSION STORAGE / INDEXEDDB VIRTUALIZATION & CLEANUP ───
 const SCHOOL_DATA_KEYS = new Set([
   'schoolAdminUsers',
@@ -115,7 +134,7 @@ localStorage.setItem = function(key, value) {
         const schoolId = authUser?.schoolId?.toString() || 'SYSTEM';
         const parsed = JSON.parse(value || '[]');
         
-        const isTopLevel = ['admissions', 'demoRequests', 'contactMessages', 'systemLogs', 'superAdminNotifications', 'superAdminAcademicTemplates', 'parentSupportConversations'].includes(key);
+        const isTopLevel = ['demoRequests', 'contactMessages', 'systemLogs', 'superAdminNotifications', 'superAdminAcademicTemplates', 'parentSupportConversations'].includes(key);
         const targetSchool = isTopLevel ? '' : schoolId;
 
         await fetch(`${BASE_URL}/collections/${key}?schoolId=${targetSchool}`, {

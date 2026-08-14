@@ -109,6 +109,39 @@ export function AuthProvider({ children }) {
     setUserProfile(null);
   };
 
+  useEffect(() => {
+    if (!userProfile) return;
+
+    const checkAuthStatus = async () => {
+      const token = sessionStorage.getItem('jwtToken');
+      if (!token) return;
+
+      try {
+        const res = await fetch(`${BASE_URL}/users/${userProfile.id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (!res.ok) {
+          if (res.status === 401 || res.status === 403) {
+            logout();
+          }
+        }
+      } catch (err) {
+        console.warn('[Auth Check] Network error during periodic validation:', err);
+      }
+    };
+
+    checkAuthStatus();
+    const interval = setInterval(checkAuthStatus, 5000);
+    window.addEventListener('focus', checkAuthStatus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', checkAuthStatus);
+    };
+  }, [userProfile?.id]);
+
   const value = {
     firebaseUser: userProfile, // For compatibility
     user: userProfile,

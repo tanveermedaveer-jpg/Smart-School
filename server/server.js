@@ -74,9 +74,31 @@ function authenticateToken(req, res, next) {
   
   if (!token) return res.status(401).json({ message: 'Access token missing' });
   
-  jwt.verify(token, JWT_SECRET, (err, user) => {
+  jwt.verify(token, JWT_SECRET, (err, decodedUser) => {
     if (err) return res.status(403).json({ message: 'Invalid or expired token' });
-    req.user = user;
+    
+    // Check if user still exists and is active
+    const db = dbManager.readDb();
+    const user = db.users.find(u => u.id && u.id.toString() === decodedUser.id.toString());
+    
+    if (!user) {
+      return res.status(401).json({ message: 'User account has been deleted or does not exist.' });
+    }
+    
+    if ((user.status || '').toString().trim().toLowerCase() === 'inactive') {
+      return res.status(403).json({ message: 'This account is inactive. Please contact the administrator.' });
+    }
+    
+    const role = normalizeRole(user.role);
+    if (role !== 'superAdmin') {
+      const schoolId = user.schoolId || user.school_id;
+      const schoolExists = db.schools.some(s => s.id && s.id.toString() === schoolId.toString());
+      if (!schoolExists) {
+        return res.status(403).json({ message: 'The school associated with this account has been deleted.' });
+      }
+    }
+    
+    req.user = decodedUser;
     next();
   });
 }
@@ -256,9 +278,9 @@ app.delete('/api/schools/:schoolId', authenticateToken, (req, res) => {
   const db = dbManager.readDb();
   const sid = req.params.schoolId;
 
-  db.schools = db.schools.filter(s => s.id !== sid);
-  // Cascading cleanup of users belonging to this school
-  db.users = db.users.filter(u => u.schoolId !== sid);
+  db.schools = db.schools.filter(s => s.id && s.id.toString() !== sid.toString());
+  // Cascading cleanup of all associated data
+  dbManager.performSchoolDeletionCascade(db, sid);
 
   dbManager.writeDb(db);
   res.json({ message: 'School and associated accounts deleted successfully.' });
