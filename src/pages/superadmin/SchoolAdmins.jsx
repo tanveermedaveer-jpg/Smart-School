@@ -23,7 +23,7 @@ const SchoolAdmins = () => {
     password: '',
     schoolId: '',
     status: 'Active',
-    role: 'schoolAdmin'
+    role: 'school_admin'
   };
   const [formData, setFormData] = useState(initialFormState);
 
@@ -77,7 +77,7 @@ const SchoolAdmins = () => {
       await saveToDb(updated);
       toast.success('School Admin updated successfully');
     } else {
-      const newAdmin = { ...formData, id: Date.now().toString(), isTemporaryPassword: true };
+      const newAdmin = { ...formData, id: Date.now().toString(), isTemporaryPassword: false };
       await saveToDb([...users, newAdmin]);
       toast.success('School Admin created successfully');
     }
@@ -119,9 +119,9 @@ const SchoolAdmins = () => {
       toast.error('Temporary password must be at least 8 characters');
       return;
     }
-    const updatedUsers = users.map(u => u.id === resetAdminId ? { ...u, password: newTempPassword, isTemporaryPassword: true } : u);
+    const updatedUsers = users.map(u => u.id === resetAdminId ? { ...u, password: newTempPassword, isTemporaryPassword: false } : u);
     await saveToDb(updatedUsers);
-    toast.success('Password reset successfully. Admin will be forced to change it on next login.');
+    toast.success('Password reset successfully.');
     setIsResetModalOpen(false);
     setResetAdminId(null);
   };
@@ -246,7 +246,7 @@ const SchoolAdmins = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                  <PasswordInput required name="password" value={formData.password} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-greenAccent focus:border-greenAccent outline-none" />
+                  <PasswordInput required={!editingId} name="password" value={formData.password} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-greenAccent focus:border-greenAccent outline-none" />
                 </div>
               </div>
 

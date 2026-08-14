@@ -175,15 +175,17 @@ app.post('/api/auth/login', (req, res) => {
 
   const { password: _, ...profile } = user;
   
+  const displayRole = (role === 'schoolAdmin') ? 'school_admin' : role;
+
   res.json({
     id: user.id,
     email: user.email,
-    role,
+    role: displayRole,
     schoolId,
     token,
     user: {
       ...profile,
-      role,
+      role: displayRole,
       schoolId
     }
   });
@@ -215,7 +217,40 @@ app.get('/api/users/:userId', authenticateToken, (req, res) => {
 app.put('/api/users/:userId', authenticateToken, (req, res) => {
   const db = dbManager.readDb();
   const idx = db.users.findIndex(u => u.id.toString() === req.params.userId.toString());
-  if (idx === -1) return res.status(404).json({ message: 'User not found' });
+  
+  if (idx === -1) {
+    const userRole = normalizeRole(req.user.role);
+    const newRole = normalizeRole(req.body.role);
+    
+    // Authorization Check for creation
+    if (userRole !== 'superAdmin') {
+      if (userRole === 'schoolAdmin') {
+        const bodySchoolId = req.body.schoolId || req.body.school_id;
+        if (!bodySchoolId || bodySchoolId.toString() !== req.user.schoolId.toString()) {
+          return res.status(403).json({ message: 'Access Denied: You can only create users for your own school.' });
+        }
+        if (newRole === 'superAdmin' || newRole === 'schoolAdmin') {
+          return res.status(403).json({ message: 'Access Denied: School Admins cannot create administrators.' });
+        }
+      } else {
+        return res.status(403).json({ message: 'Access Denied: Unauthorized to create users.' });
+      }
+    }
+
+    // Create user
+    const newUser = { ...req.body, id: req.params.userId.toString() };
+    if (newUser.password) {
+      if (!newUser.password.startsWith('$2')) {
+        const salt = bcrypt.genSaltSync(10);
+        newUser.password = bcrypt.hashSync(newUser.password, salt);
+      }
+    }
+    db.users.push(newUser);
+    dbManager.writeDb(db);
+    
+    const { password: _, ...profile } = newUser;
+    return res.json(profile);
+  }
 
   const targetUser = db.users[idx];
   const userRole = normalizeRole(req.user.role);

@@ -269,7 +269,7 @@ const Schools = () => {
           phone: newSchool.phone,
           username: `admin_${newSchool.name.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
           password: 'Admin123!',
-          role: 'schoolAdmin',
+          role: 'school_admin',
           status: 'Active',
           schoolId: schoolId,
           isTemporaryPassword: false
