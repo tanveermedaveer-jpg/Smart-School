@@ -332,7 +332,7 @@
       "email": "admin@brightfuture.edu",
       "phone": "0300-1111111",
       "username": "admin_brightfutureschool",
-      "password": "$2a$10$.q4JuoJREQ9HzqPovrHWaO.LU8DEq5rrDsBF5kHlZY7s8QgSDAUDW",
+      "password": "$2a$10$z3tq12akTTQbho7N7lDArul2PdjIzsvVTJmDZuJ5Sr04cCQsfF8Xu",
       "role": "schoolAdmin",
       "status": "Active",
       "schoolId": "1786684194895",
@@ -343,7 +343,7 @@
       "email": "ahmed.admin@gmail.com",
       "phone": "03103716116",
       "username": "Ahmed Khan",
-      "password": "$2a$10$8DZqwCeQ02vfLFe0gJhk1ehxSGEf1Pa/kFL.wRCZWKwnBvfszQ02C",
+      "password": "Admin123!",
       "schoolId": "1786684194895",
       "status": "Active",
       "role": "schoolAdmin",
@@ -386,6 +386,19 @@
       "time": "10:09:55 AM",
       "school": "Bright Future School",
       "user": "Super Admin",
+      "status": "Success"
+    },
+    {
+      "id": "log_1786685879423",
+      "schoolId": "1786684194895",
+      "userId": "1786684265329",
+      "role": "schoolAdmin",
+      "action": "School Login",
+      "timestamp": "2026-08-14T05:37:59.423Z",
+      "date": "8/14/2026",
+      "time": "10:37:59 AM",
+      "school": "System",
+      "user": "Ahmed Khan",
       "status": "Success"
     }
   ],
