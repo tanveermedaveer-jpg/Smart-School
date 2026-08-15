@@ -64,6 +64,31 @@ function ensureDb() {
   }
 }
 
+// Load local .env file if it exists (for local development database/secret matching)
+try {
+  const fs = require('fs');
+  const path = require('path');
+  const envPath = path.join(__dirname, '..', '.env');
+  if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    envContent.split(/\r?\n/).forEach(line => {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) return;
+      const parts = trimmed.split('=');
+      if (parts.length >= 2) {
+        const key = parts[0].trim();
+        const value = parts.slice(1).join('=').trim().replace(/^"(.*)"$/, '$1').replace(/^'(.*)'$/, '$1');
+        if (key && !process.env[key]) {
+          process.env[key] = value;
+        }
+      }
+    });
+    console.log('[Database] Loaded local .env configuration.');
+  }
+} catch (e) {
+  console.warn('[Database] Failed to read local .env file:', e.message);
+}
+
 const useFirestore = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1' || process.env.USE_FIRESTORE === 'true';
 
 let dbCache = null;
