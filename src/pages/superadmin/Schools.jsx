@@ -126,13 +126,13 @@ const Schools = () => {
     city: '',
     classes: '',
     description: '',
-    logo: '',
-    banner: '',
     featured: false,
     admissionsEnabled: false,
     planId: 'monthly',
     status: 'Active',
-    templateId: 'pakistan-school-template'
+    templateId: 'pakistan-school-template',
+    logo: '',
+    banner: ''
   };
   const [formData, setFormData] = useState(initialFormState);
 
@@ -260,27 +260,9 @@ const Schools = () => {
           }
         });
 
-        // 2. Create the School Admin account using existing School Admin creation schema
-        const adminId = (Date.now() + 1).toString();
-        const schoolAdminUser = {
-          id: adminId,
-          name: `Admin of ${newSchool.name}`,
-          email: newSchool.email,
-          phone: newSchool.phone,
-          username: `admin_${newSchool.name.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
-          password: 'Admin123!',
-          role: 'school_admin',
-          status: 'Active',
-          schoolId: schoolId,
-          isTemporaryPassword: false
-        };
-
         // Write classes and subjects to Firestore
         await saveClasses(schoolId, copiedClasses);
         await saveCollection('schoolAdminSubjects', schoolId, copiedSubjects);
-
-        // Persist the school admin to users in Firestore
-        await upsertUser(schoolAdminUser);
 
         // Save School record
         await saveToDb([...schools, newSchool]);
@@ -484,19 +466,20 @@ const Schools = () => {
                   <input required type="text" name="description" value={formData.description} onChange={handleInputChange} placeholder="Short description of the school" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-greenAccent focus:border-greenAccent outline-none" />
                 </div>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">School Logo</label>
-                  <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'logo')} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-darkBlue hover:file:bg-blue-100 cursor-pointer" />
-                  {formData.logo && <div className="mt-2 h-12 w-12 border rounded overflow-hidden"><img src={formData.logo} alt="logo preview" className="w-full h-full object-cover"/></div>}
+                  <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'logo')} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 transition-colors" />
+                  {formData.logo && <img src={formData.logo} alt="Logo Preview" className="h-12 object-contain mt-2" />}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">School Banner</label>
-                  <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'banner')} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-darkBlue hover:file:bg-blue-100 cursor-pointer" />
-                  {formData.banner && <div className="mt-2 h-12 w-24 border rounded overflow-hidden"><img src={formData.banner} alt="banner preview" className="w-full h-full object-cover"/></div>}
+                  <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'banner')} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-colors" />
+                  {formData.banner && <img src={formData.banner} alt="Banner Preview" className="h-12 object-contain mt-2" />}
                 </div>
               </div>
+
+
 
               <div className="flex items-center space-x-6 pt-2">
                 <label className="flex items-center space-x-2 cursor-pointer">

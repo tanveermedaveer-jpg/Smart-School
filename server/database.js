@@ -169,46 +169,9 @@ const DEFAULT_DB = {
       schoolId: "SYSTEM",
       schoolName: "System Super Admin",
       createdAt: "2026-08-13T07:26:28.637Z"
-    },
-    {
-      id: "1786606210437",
-      name: "Admin of Tanveer medaveer",
-      email: "tanveermedaveer@gmail.com",
-      phone: "03103716116",
-      username: "admin_tanveermedaveer",
-      password: "$2a$10$VwtbmLH.2pFFveWXPrBMzORHKTteiyj56EBvbaMrMDmO0PAGH9Iia",
-      role: "schoolAdmin",
-      status: "Active",
-      schoolId: "1786606210435",
-      isTemporaryPassword: false
-    },
-    {
-      name: "Sadaf",
-      email: "muhammadsadaf010@gmail.com",
-      phone: "03103716116",
-      username: "Sadaf",
-      password: "$2a$10$FiCjkRPbAT0Kjh0lzZN6hObJUVRwHr6Td.9BFE9fcRYOPMdwtOqtm",
-      schoolId: "1786606210435",
-      status: "Active",
-      role: "schoolAdmin",
-      id: "1786606287197",
-      isTemporaryPassword: true
     }
   ],
-  schools: [
-    {
-      id: "1786606210435",
-      name: "Tanveer medaveer",
-      code: "12201",
-      email: "tanveermedaveer@gmail.com",
-      phone: "03103716116",
-      address: "AHMADABAD D IKHAN",
-      city: "D I KHAN",
-      classes: "1st to 10th",
-      description: "yes",
-      logo: ""
-    }
-  ]
+  schools: []
 };
 
 function sanitizeCache(cache) {
@@ -443,7 +406,51 @@ const KEY_MAP = {
 function getCollection(key, schoolId) {
   const db = readDb();
   const prop = KEY_MAP[key] || key;
-  const list = db[prop] || [];
+  let list = db[prop] || [];
+  
+  if (prop === 'schools') {
+    const settingsList = db.settings || [];
+    const galleryList = db.gallery || [];
+    list = list.map(school => {
+      const schoolSettings = settingsList.find(s => s.schoolId && s.schoolId.toString() === school.id.toString());
+      
+      const schoolLogoItem = galleryList
+        .filter(item => item.schoolId && item.schoolId.toString() === school.id.toString() && item.category === 'School Logo')
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))[0];
+        
+      const schoolBannerItem = galleryList
+        .filter(item => item.schoolId && item.schoolId.toString() === school.id.toString() && item.category === 'School Banner')
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))[0];
+
+      return {
+        ...school,
+        logo: schoolLogoItem ? schoolLogoItem.url : (schoolSettings?.logoUrl || ''),
+        banner: schoolBannerItem ? schoolBannerItem.url : (schoolSettings?.bannerUrl || '')
+      };
+    });
+  }
+  
+  if (prop === 'settings') {
+    const galleryList = db.gallery || [];
+    list = list.map(item => {
+      const itemSchoolId = item.schoolId || item.school_id;
+      if (!itemSchoolId) return item;
+      
+      const schoolLogoItem = galleryList
+        .filter(g => g.schoolId && g.schoolId.toString() === itemSchoolId.toString() && g.category === 'School Logo')
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))[0];
+        
+      const schoolBannerItem = galleryList
+        .filter(g => g.schoolId && g.schoolId.toString() === itemSchoolId.toString() && g.category === 'School Banner')
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))[0];
+
+      return {
+        ...item,
+        logoUrl: schoolLogoItem ? schoolLogoItem.url : (item.logoUrl || ''),
+        bannerUrl: schoolBannerItem ? schoolBannerItem.url : (item.bannerUrl || '')
+      };
+    });
+  }
   
   if (!schoolId || schoolId === 'SYSTEM') {
     return list;
@@ -504,7 +511,14 @@ function saveCollection(key, schoolId, updatedItems) {
     db[prop] = [];
   }
 
-  const items = Array.isArray(updatedItems) ? updatedItems : [];
+  // Prevent non-Super Admin from writing to schools and superAdminAcademicTemplates
+  if ((prop === 'schools' || prop === 'superAdminAcademicTemplates') && schoolId && schoolId !== 'SYSTEM') {
+    console.warn(`[Database] Blocked non-Super Admin (schoolId: ${schoolId}) from modifying ${prop} collection.`);
+    return;
+  }
+
+  // Wrap single objects in an array to support object-to-array serialization mismatch
+  const items = Array.isArray(updatedItems) ? updatedItems : (updatedItems ? [updatedItems] : []);
 
   if (prop === 'users') {
     const hashedItems = items.map(u => {
@@ -584,6 +598,47 @@ function saveCollection(key, schoolId, updatedItems) {
             performSchoolDeletionCascade(db, s.id);
           }
         });
+
+        // Sync school logo/banner uploads to gallery and avoid duplicate storage
+        if (!db.gallery) db.gallery = [];
+        items.forEach(school => {
+          const sidStr = school.id && school.id.toString();
+          if (!sidStr) return;
+
+          if (school.logo && school.logo.startsWith('data:image')) {
+            // Remove previous school logos of this school to keep database tidy
+            db.gallery = db.gallery.filter(item => 
+              !(item.schoolId && item.schoolId.toString() === sidStr && item.category === 'School Logo')
+            );
+            db.gallery.push({
+              id: 'logo-' + Date.now().toString() + '-' + Math.random().toString().substring(2, 6),
+              schoolId: sidStr,
+              url: school.logo,
+              title: 'School Logo',
+              category: 'School Logo',
+              status: 'published',
+              createdAt: new Date().toISOString()
+            });
+            school.logo = ''; // Clear base64 from school object in db.schools list
+          }
+
+          if (school.banner && school.banner.startsWith('data:image')) {
+            // Remove previous school banners of this school
+            db.gallery = db.gallery.filter(item => 
+              !(item.schoolId && item.schoolId.toString() === sidStr && item.category === 'School Banner')
+            );
+            db.gallery.push({
+              id: 'banner-' + Date.now().toString() + '-' + Math.random().toString().substring(2, 6),
+              schoolId: sidStr,
+              url: school.banner,
+              title: 'School Banner',
+              category: 'School Banner',
+              status: 'published',
+              createdAt: new Date().toISOString()
+            });
+            school.banner = ''; // Clear base64 from school object in db.schools list
+          }
+        });
       }
       db[prop] = items;
     } else {
@@ -599,6 +654,50 @@ function saveCollection(key, schoolId, updatedItems) {
       }));
 
       db[prop] = [...otherSchools, ...stampedItems];
+
+      // If saving school settings, ensure logoUrl/bannerUrl are saved to gallery
+      if (prop === 'settings') {
+        const settingsObj = stampedItems[0];
+        if (settingsObj && schoolId) {
+          if (!db.gallery) db.gallery = [];
+          
+          if (settingsObj.logoUrl) {
+            const existingLogo = db.gallery.find(g => 
+              g.schoolId && g.schoolId.toString() === schoolId.toString() && 
+              g.category === 'School Logo' && g.url === settingsObj.logoUrl
+            );
+            if (!existingLogo) {
+              db.gallery.push({
+                id: 'logo-' + Date.now().toString(),
+                schoolId: schoolId.toString(),
+                url: settingsObj.logoUrl,
+                title: 'School Logo',
+                category: 'School Logo',
+                status: 'published',
+                createdAt: new Date().toISOString()
+              });
+            }
+          }
+          
+          if (settingsObj.bannerUrl) {
+            const existingBanner = db.gallery.find(g => 
+              g.schoolId && g.schoolId.toString() === schoolId.toString() && 
+              g.category === 'School Banner' && g.url === settingsObj.bannerUrl
+            );
+            if (!existingBanner) {
+              db.gallery.push({
+                id: 'banner-' + Date.now().toString(),
+                schoolId: schoolId.toString(),
+                url: settingsObj.bannerUrl,
+                title: 'School Banner',
+                category: 'School Banner',
+                status: 'published',
+                createdAt: new Date().toISOString()
+              });
+            }
+          }
+        }
+      }
     }
   }
 

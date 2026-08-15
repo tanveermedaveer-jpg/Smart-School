@@ -300,7 +300,11 @@ export async function syncAllSchoolData(schoolId) {
   try {
     const promises = keys.map(key => 
       getCollection(key, schoolId).then(data => {
-        localStorage.setItem(key, JSON.stringify(data));
+        let storageValue = data;
+        if (['schoolAdminSettings'].includes(key)) {
+          storageValue = Array.isArray(data) ? (data[0] || {}) : data;
+        }
+        localStorage.setItem(key, JSON.stringify(storageValue));
       })
     );
     await Promise.all(promises);

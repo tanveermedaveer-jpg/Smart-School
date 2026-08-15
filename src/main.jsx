@@ -111,7 +111,7 @@ const originalRemoveItem = localStorage.removeItem.bind(localStorage);
 
 localStorage.getItem = function(key) {
   if (SCHOOL_DATA_KEYS.has(key)) {
-    return memoryStorage[key] || (key === 'schoolAdminAttendance' ? '{}' : '[]');
+    return memoryStorage[key] || (['schoolAdminSettings'].includes(key) ? '{}' : '[]');
   }
   return originalGetItem(key);
 };
@@ -131,6 +131,15 @@ localStorage.setItem = function(key, value) {
         const token = sessionStorage.getItem('jwtToken');
         const authUserStr = sessionStorage.getItem('authUser');
         const authUser = authUserStr ? JSON.parse(authUserStr) : null;
+        
+        // Prevent non-Super Admin from syncing system-wide collections to the backend
+        const systemKeys = ['schools', 'superAdminAcademicTemplates', 'superAdminNotifications', 'demoRequests', 'contactMessages', 'systemLogs'];
+        const role = authUser?.role?.toString().toLowerCase().replace(/[\s_]/g, '') || '';
+        if (systemKeys.includes(key) && role !== 'superadmin') {
+          console.warn(`[Auto-Sync] Skipping sync of system collection ${key} for role ${role}`);
+          return;
+        }
+        
         const schoolId = authUser?.schoolId?.toString() || 'SYSTEM';
         const parsed = JSON.parse(value || '[]');
         

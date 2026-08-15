@@ -43,23 +43,14 @@ const Gallery = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const defaultItems = [
-    { title: "School Campus", img: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=800&q=80" },
-    { title: "Students in Classroom", img: "https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=800&q=80" },
-    { title: "School Events", img: "https://images.unsplash.com/photo-1511629091441-ee46146481b6?auto=format&fit=crop&w=800&q=80" },
-    { title: "Computer Lab", img: "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=800&q=80" },
-    { title: "Science Lab", img: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80" },
-    { title: "Graduation Ceremony", img: "https://images.unsplash.com/photo-1558021212-51b6ecfa0db9?auto=format&fit=crop&w=800&q=80" }
-  ];
-
   // Dynamic active items based on active/published gallery entries
   let activeItems = [];
   
   if (galleryItems.length > 0) {
-    // Filter by selected school if specified
-    const filteredGallery = selectedSchoolId 
+    // Filter by selected school if specified, and filter out logos/banners
+    const filteredGallery = (selectedSchoolId 
       ? galleryItems.filter(item => item.schoolId && item.schoolId.toString() === selectedSchoolId.toString())
-      : galleryItems;
+      : galleryItems).filter(item => item.category !== 'School Logo' && item.category !== 'School Banner');
       
     activeItems = filteredGallery.map(item => {
       const school = schools.find(s => s.id?.toString() === item.schoolId?.toString());
@@ -69,12 +60,6 @@ const Gallery = () => {
         img: item.url
       };
     });
-  }
-
-  // Fallback to default items if no dynamic gallery content exists
-  const hasDynamicContent = activeItems.length > 0;
-  if (!hasDynamicContent) {
-    activeItems = defaultItems;
   }
 
   const maxIndex = Math.max(0, activeItems.length - visibleSlides);
@@ -184,35 +169,41 @@ const Gallery = () => {
           >
             {/* Viewport wrapper */}
             <div className="overflow-hidden py-4 px-1">
-              <div 
-                className="flex transition-transform duration-500 ease-out"
-                style={{
-                  transform: `translate3d(-${currentIndex * (100 / visibleSlides)}%, 0, 0)`,
-                  width: `${(activeItems.length / visibleSlides) * 100}%`
-                }}
-              >
-                {activeItems.map((item, idx) => (
-                  <div 
-                    key={idx} 
-                    className="px-3 select-none"
-                    style={{ width: `${100 / activeItems.length}%` }}
-                  >
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden group hover:shadow-md transition-shadow relative">
-                      <div className="aspect-video relative overflow-hidden cursor-pointer">
-                        <img 
-                          src={item.img} 
-                          alt={item.title} 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
-                          onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=800&q=80'; }}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-5">
-                          <h3 className="text-white font-bold tracking-wide text-[16px] drop-shadow-md">{item.title}</h3>
+              {activeItems.length === 0 ? (
+                <div className="text-center py-12 text-slate-400 font-medium">
+                  No published gallery photos available.
+                </div>
+              ) : (
+                <div 
+                  className="flex transition-transform duration-500 ease-out"
+                  style={{
+                    transform: `translate3d(-${currentIndex * (100 / visibleSlides)}%, 0, 0)`,
+                    width: `${(activeItems.length / visibleSlides) * 100}%`
+                  }}
+                >
+                  {activeItems.map((item, idx) => (
+                    <div 
+                      key={idx} 
+                      className="px-3 select-none"
+                      style={{ width: `${100 / activeItems.length}%` }}
+                    >
+                      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden group hover:shadow-md transition-shadow relative">
+                        <div className="aspect-video relative overflow-hidden cursor-pointer">
+                          <img 
+                            src={item.img} 
+                            alt={item.title} 
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+                            onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=800&q=80'; }}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-5">
+                            <h3 className="text-white font-bold tracking-wide text-[16px] drop-shadow-md">{item.title}</h3>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Previous Arrow Navigation */}

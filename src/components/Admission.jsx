@@ -67,48 +67,6 @@ const Admission = () => {
   };
 
 
-  const PlaceholderCard = ({ banner, logo, name, city }) => (
-    <div className="bg-white rounded-2xl shadow-md hover:shadow-2xl border border-gray-100 overflow-hidden transition-all duration-300 group flex flex-col transform hover:-translate-y-1">
-      <div className="h-48 relative overflow-hidden bg-gray-100">
-        <img 
-          src={banner} 
-          alt="Banner" 
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90" 
-          onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=800&q=80'; }}
-        />
-        <div className="absolute top-4 right-4 bg-greenAccent text-white px-3 py-1 rounded-full text-xs font-bold shadow-md">
-          Admissions Open
-        </div>
-      </div>
-      <div className="px-6 pt-0 pb-6 relative flex-1 flex flex-col">
-        <div className="w-20 h-20 rounded-xl bg-white shadow-lg border-4 border-white -mt-10 mb-4 flex items-center justify-center overflow-hidden z-10 relative">
-           <img 
-             src={logo} 
-             alt="Logo" 
-             className="w-full h-full object-cover" 
-             onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?auto=format&fit=crop&w=200&q=80'; }}
-           />
-        </div>
-        <h3 className="text-xl font-bold text-darkBlue mb-2 line-clamp-1">{name}</h3>
-        <div className="space-y-2 mb-6 text-sm text-gray-600">
-          <div className="flex items-center space-x-2">
-            <MapPin className="w-4 h-4 text-greenAccent shrink-0" />
-            <span className="line-clamp-1">{city}</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <BookOpen className="w-4 h-4 text-greenAccent shrink-0" />
-            <span>Pre-K to Grade 12</span>
-          </div>
-        </div>
-        <div className="mt-auto">
-          <button disabled title="Available after school is published" className="w-full bg-gray-200 text-gray-400 py-3 rounded-xl font-semibold cursor-not-allowed transition-colors">
-            Apply Now
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
   const SchoolCard = ({ school }) => (
     <div className="bg-white rounded-2xl shadow-md hover:shadow-2xl border border-gray-100 overflow-hidden transition-all duration-300 group flex flex-col transform hover:-translate-y-1">
       <div className="h-48 relative overflow-hidden bg-gray-100">
@@ -185,26 +143,9 @@ const Admission = () => {
             {schools.length > 0 ? (
               schools.map(school => <SchoolCard key={school.id} school={school} />)
             ) : (
-              <>
-                <PlaceholderCard 
-                  banner="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=800&q=80" 
-                  logo="https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?auto=format&fit=crop&w=200&q=80" 
-                  name="Excellence Academy" 
-                  city="New York, USA" 
-                />
-                <PlaceholderCard 
-                  banner="https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?auto=format&fit=crop&w=800&q=80" 
-                  logo="https://images.unsplash.com/photo-1560179707-f14e90ef3623?auto=format&fit=crop&w=200&q=80" 
-                  name="Global Heights School" 
-                  city="London, UK" 
-                />
-                <PlaceholderCard 
-                  banner="https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80" 
-                  logo="https://images.unsplash.com/photo-1614036634955-ae5e90f9cb9c?auto=format&fit=crop&w=200&q=80" 
-                  name="Pioneer International" 
-                  city="Sydney, Australia" 
-                />
-              </>
+              <div className="col-span-full text-center py-12 text-gray-500 font-medium">
+                No active schools offering online admissions are available at the moment.
+              </div>
             )}
           </div>
         </div>

@@ -90,6 +90,29 @@ export function AuthProvider({ children }) {
       role: normalizedRoleName
     };
     
+    // Clear localStorage school keys to prevent any cross-talk or demo remnants
+    try {
+      const keys = [
+        'schoolAdminUsers', 'schoolAdminClasses', 'schoolAdminSubjects',
+        'schoolAdminTeacherAssignments', 'schoolAdminFeeStructures',
+        'schoolAdminMonthlyFees', 'schoolAdminReceipts', 'schoolAdminExams',
+        'schoolAdminResults', 'schoolAdminNotices', 'schoolAdminGallery',
+        'schoolAdminFees', 'teacherMarks', 'teacherHomework',
+        'schoolAdminTimetable', 'schoolAdminGradeScale', 'schoolAdminSettings',
+        'schoolAdminAttendance', 'admissions', 'schools',
+        'parentSupportConversations', 'supportTickets', 'demoRequests',
+        'contactMessages', 'systemLogs', 'superAdminNotifications',
+        'superAdminAcademicTemplates'
+      ];
+      keys.forEach(k => {
+        try {
+          localStorage.removeItem(k);
+        } catch (e) {}
+      });
+    } catch (e) {
+      console.warn('[AuthContext] LocalStorage cleanup failed:', e);
+    }
+
     // Save credentials to session storage
     sessionStorage.setItem('jwtToken', token);
     sessionStorage.setItem('authUser', JSON.stringify(normalizedUser));
