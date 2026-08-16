@@ -12,31 +12,42 @@ const Dashboard = () => {
   });
 
   const [recentAdmissions, setRecentAdmissions] = useState([]);
-  const [recentNotices, setRecentNotices] = useState([]);
+  const safeParseJSON = (str, fallback) => {
+    try {
+      if (!str || str === 'undefined') return fallback;
+      return JSON.parse(str);
+    } catch (e) {
+      return fallback;
+    }
+  };
 
-  const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
-  const schoolSettings = JSON.parse(localStorage.getItem('schoolAdminSettings') || '{}');
+  const authUser = safeParseJSON(sessionStorage.getItem('authUser'), {});
+  const schoolSettings = safeParseJSON(localStorage.getItem('schoolAdminSettings'), {});
+  const schools = safeParseJSON(localStorage.getItem('schools'), []);
 
-  const schools = JSON.parse(localStorage.getItem('schools') || '[]');
-  const mySchool = schools.find(s => s.id?.toString() === authUser.schoolId?.toString());
   const currentSchoolId = authUser.schoolId?.toString();
+  const mySchool = (schools.find(s => s.id?.toString() === currentSchoolId)) || (currentSchoolId ? {
+    id: currentSchoolId,
+    name: authUser.schoolName || schoolSettings.schoolName || authUser.name || 'School Portal',
+    code: authUser.schoolCode || currentSchoolId
+  } : null);
 
   useEffect(() => {
     if (!currentSchoolId) return;
 
     // Users (Scoped explicitly by schoolId)
-    const users = JSON.parse(localStorage.getItem('schoolAdminUsers') || '[]');
+    const users = safeParseJSON(localStorage.getItem('schoolAdminUsers'), []);
     const students = users.filter(u => u.role?.toLowerCase() === 'student' && u.schoolId?.toString() === currentSchoolId);
     const teachers = users.filter(u => u.role?.toLowerCase() === 'teacher' && u.schoolId?.toString() === currentSchoolId);
     const parents = users.filter(u => u.role?.toLowerCase() === 'parent' && u.schoolId?.toString() === currentSchoolId);
 
     // Classes (Scoped explicitly by schoolId)
-    const classes = JSON.parse(localStorage.getItem('schoolAdminClasses') || '[]');
+    const classes = safeParseJSON(localStorage.getItem('schoolAdminClasses'), []);
     const filteredClasses = classes.filter(c => c.schoolId?.toString() === currentSchoolId);
 
     // Attendance (Scoped explicitly by student presence lookup of our own school)
     const today = new Date().toISOString().split('T')[0];
-    const attendance = JSON.parse(localStorage.getItem('schoolAdminAttendance') || '{}');
+    const attendance = safeParseJSON(localStorage.getItem('schoolAdminAttendance'), {});
     
     let todayAttendance = {};
     if (Array.isArray(attendance)) {
@@ -65,16 +76,16 @@ const Dashboard = () => {
     });
 
     // Admissions (Scoped explicitly by schoolId)
-    const admissions = JSON.parse(localStorage.getItem('admissions') || '[]');
+    const admissions = safeParseJSON(localStorage.getItem('admissions'), []);
     const filteredAdmissions = admissions.filter(a => a.schoolId?.toString() === currentSchoolId);
     setRecentAdmissions(filteredAdmissions.slice(-5).reverse());
 
     // Notices (Scoped explicitly by schoolId)
-    const notices = JSON.parse(localStorage.getItem('schoolAdminNotices') || '[]');
+    const notices = safeParseJSON(localStorage.getItem('schoolAdminNotices'), []);
     const filteredNotices = notices.filter(n => n.schoolId?.toString() === currentSchoolId);
     
     // Global Notifications
-    const globalNotifications = JSON.parse(localStorage.getItem('superAdminNotifications') || '[]');
+    const globalNotifications = safeParseJSON(localStorage.getItem('superAdminNotifications'), []);
     const mySchoolId = currentSchoolId || 'global';
     
     const relevantGlobal = globalNotifications.filter(n => 
@@ -85,7 +96,7 @@ const Dashboard = () => {
       date: n.publishDate
     }));
 
-    const allNotices = [...filteredNotices, ...relevantGlobal].sort((a, b) => new Date(b.date) - new Date(a.date));
+    const allNotices = [...filteredNotices, ...relevantGlobal].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
     setRecentNotices(allNotices.slice(0, 5));
   }, [currentSchoolId]);
 

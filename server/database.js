@@ -599,22 +599,12 @@ function getCollection(key, schoolId) {
   
   if (prop === 'schools') {
     const settingsList = db.settings || [];
-    const galleryList = db.gallery || [];
     list = list.map(school => {
       const schoolSettings = settingsList.find(s => s.schoolId && s.schoolId.toString() === school.id.toString());
-      
-      const schoolLogoItem = galleryList
-        .filter(item => item.schoolId && item.schoolId.toString() === school.id.toString() && item.category === 'School Logo')
-        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))[0];
-        
-      const schoolBannerItem = galleryList
-        .filter(item => item.schoolId && item.schoolId.toString() === school.id.toString() && item.category === 'School Banner')
-        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))[0];
-
       return {
         ...school,
-        logo: schoolLogoItem ? schoolLogoItem.url : (schoolSettings?.logoUrl || ''),
-        banner: schoolBannerItem ? schoolBannerItem.url : (schoolSettings?.bannerUrl || '')
+        logo: school.logo || schoolSettings?.logoUrl || '',
+        banner: school.banner || schoolSettings?.bannerUrl || ''
       };
     });
   }
@@ -787,51 +777,13 @@ async function saveCollection(key, schoolId, updatedItems) {
           if (school.id) {
             const sidStr = school.id.toString();
             const existingSchool = schoolMap.get(sidStr);
-            schoolMap.set(sidStr, existingSchool ? { ...existingSchool, ...school } : school);
+            const merged = existingSchool ? { ...existingSchool, ...school } : { ...school };
+            if (school.logo !== undefined) merged.logo = school.logo;
+            if (school.banner !== undefined) merged.banner = school.banner;
+            schoolMap.set(sidStr, merged);
           }
         });
         db.schools = Array.from(schoolMap.values());
-
-        // Sync school logo/banner uploads to gallery and avoid duplicate storage
-        if (!db.gallery) db.gallery = [];
-        items.forEach(school => {
-          const sidStr = school.id && school.id.toString();
-          if (!sidStr) return;
-
-          if (school.logo && school.logo.startsWith('data:image')) {
-            // Remove previous school logos of this school to keep database tidy
-            db.gallery = db.gallery.filter(item => 
-              !(item.schoolId && item.schoolId.toString() === sidStr && item.category === 'School Logo')
-            );
-            db.gallery.push({
-              id: 'logo-' + Date.now().toString() + '-' + Math.random().toString().substring(2, 6),
-              schoolId: sidStr,
-              url: school.logo,
-              title: 'School Logo',
-              category: 'School Logo',
-              status: 'published',
-              createdAt: new Date().toISOString()
-            });
-            school.logo = ''; // Clear base64 from school object in db.schools list
-          }
-
-          if (school.banner && school.banner.startsWith('data:image')) {
-            // Remove previous school banners of this school
-            db.gallery = db.gallery.filter(item => 
-              !(item.schoolId && item.schoolId.toString() === sidStr && item.category === 'School Banner')
-            );
-            db.gallery.push({
-              id: 'banner-' + Date.now().toString() + '-' + Math.random().toString().substring(2, 6),
-              schoolId: sidStr,
-              url: school.banner,
-              title: 'School Banner',
-              category: 'School Banner',
-              status: 'published',
-              createdAt: new Date().toISOString()
-            });
-            school.banner = ''; // Clear base64 from school object in db.schools list
-          }
-        });
       }
       db[prop] = items;
     } else {

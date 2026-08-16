@@ -47,10 +47,10 @@ const Gallery = () => {
   let activeItems = [];
   
   if (galleryItems.length > 0) {
-    // Filter by selected school if specified
-    const filteredGallery = selectedSchoolId 
+    // Filter by selected school if specified, and filter out logos/banners
+    const filteredGallery = (selectedSchoolId 
       ? galleryItems.filter(item => item.schoolId && item.schoolId.toString() === selectedSchoolId.toString())
-      : galleryItems;
+      : galleryItems).filter(item => item.category !== 'School Logo' && item.category !== 'School Banner');
       
     activeItems = filteredGallery.map(item => {
       const school = schools.find(s => s.id?.toString() === item.schoolId?.toString());
