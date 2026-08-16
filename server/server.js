@@ -105,6 +105,14 @@ function authenticateToken(req, res, next) {
 
 
 
+app.get('/api/debug/db-error', (req, res) => {
+  res.json({
+    useFirestore: process.env.NODE_ENV === 'production' || process.env.VERCEL === '1' || process.env.USE_FIRESTORE === 'true',
+    hasServiceAccount: !!process.env.FIREBASE_SERVICE_ACCOUNT,
+    lastDbError: dbManager.getLastDbError ? dbManager.getLastDbError() : null
+  });
+});
+
 // ─── AUTHENTICATION ENDPOINTS ───────────────────────────────────────────
 
 app.post('/api/auth/login', (req, res) => {

@@ -91,6 +91,7 @@ try {
 }
 
 const useFirestore = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1' || process.env.USE_FIRESTORE === 'true';
+let lastDbError = null;
 
 let dbCache = null;
 let dbCacheInitial = null;
@@ -153,6 +154,7 @@ async function getAccessTokenAsync() {
       return null;
     } catch (err) {
       console.error('Failed to authenticate service account:', err);
+      lastDbError = { context: 'getAccessTokenAsync', message: err.message, stack: err.stack };
       return null;
     } finally {
       tokenPromise = null;
@@ -192,11 +194,14 @@ async function fetchAllFromFirestoreAsync() {
     
     if (res.status === 403) {
       console.log('[Firestore Async] Permission denied (403). Skipping Firestore.');
+      lastDbError = { context: 'fetchAllFromFirestoreAsync_HTTP_403', status: res.status };
       return null;
     }
 
     if (!res.ok) {
       console.log('[Firestore Async] batchGet HTTP error:', res.status);
+      const text = await res.text().catch(() => '');
+      lastDbError = { context: 'fetchAllFromFirestoreAsync_HTTP_error', status: res.status, text };
       return null;
     }
 
@@ -223,6 +228,7 @@ async function fetchAllFromFirestoreAsync() {
     return data;
   } catch (err) {
     console.error('[Firestore Async] batchGet failed:', err);
+    lastDbError = { context: 'fetchAllFromFirestoreAsync_catch', message: err.message, stack: err.stack };
     return null;
   }
 }
@@ -854,5 +860,6 @@ module.exports = {
   getCollection,
   saveCollection,
   performSchoolDeletionCascade,
-  KEY_MAP
+  KEY_MAP,
+  getLastDbError: () => lastDbError
 };
