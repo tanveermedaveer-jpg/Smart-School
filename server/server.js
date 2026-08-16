@@ -95,9 +95,8 @@ function authenticateToken(req, res, next) {
     const role = normalizeRole(user.role);
     if (role !== 'superAdmin') {
       const schoolId = user.schoolId || user.school_id;
-      const schoolExists = db.schools.some(s => s.id && s.id.toString() === schoolId.toString());
-      if (!schoolExists) {
-        return res.status(403).json({ message: 'The school associated with this account has been deleted.' });
+      if (!schoolId || schoolId.toString().trim() === '' || schoolId === 'SYSTEM') {
+        return res.status(403).json({ message: 'School Admin account has no assigned School ID. Please contact the administrator.' });
       }
     }
     

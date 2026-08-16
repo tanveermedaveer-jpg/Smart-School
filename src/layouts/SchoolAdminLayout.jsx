@@ -8,10 +8,13 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
+import { useAuth } from '../context/AuthContext';
+
 const SchoolAdminLayout = () => {
   const navigate = useNavigate();
+  const { user: contextUser } = useAuth();
   const authUserString = sessionStorage.getItem('authUser');
-  const authUser = authUserString ? JSON.parse(authUserString) : null;
+  const authUser = authUserString ? JSON.parse(authUserString) : contextUser;
   const { isDark, toggleTheme } = useTheme();
 
   const [avatar, setAvatar] = useState(authUser?.profilePhoto || null);
@@ -25,10 +28,11 @@ const SchoolAdminLayout = () => {
     window.addEventListener('avatarUpdate', handleUpdate);
 
     const doSync = async () => {
-      if (authUser?.schoolId) {
+      const activeSchoolId = authUser?.schoolId || contextUser?.schoolId;
+      if (activeSchoolId) {
         try {
           const { syncAllSchoolData } = await import('../utils/db');
-          await syncAllSchoolData(authUser.schoolId);
+          await syncAllSchoolData(activeSchoolId);
         } catch (err) {
           console.error('Error syncing SchoolAdminLayout:', err);
         }
@@ -39,7 +43,7 @@ const SchoolAdminLayout = () => {
     doSync();
 
     return () => window.removeEventListener('avatarUpdate', handleUpdate);
-  }, [authUser?.schoolId]);
+  }, [authUser?.schoolId, contextUser?.schoolId]);
 
   const handleLogout = () => {
     sessionStorage.removeItem('authUser');

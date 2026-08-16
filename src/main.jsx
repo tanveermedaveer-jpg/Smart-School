@@ -7,11 +7,11 @@ import { ThemeProvider } from './context/ThemeContext.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import { BASE_URL } from './utils/db';
 
-// Global fetch interceptor to catch 401/403 and force logout
+// Global fetch interceptor to catch 401 unauthenticated responses and force logout
 const originalFetch = window.fetch;
 window.fetch = async function (...args) {
   const response = await originalFetch(...args);
-  if (response.status === 401 || response.status === 403) {
+  if (response.status === 401) {
     const token = sessionStorage.getItem('jwtToken');
     if (token) {
       sessionStorage.removeItem('jwtToken');
