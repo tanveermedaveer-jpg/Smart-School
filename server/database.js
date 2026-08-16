@@ -103,8 +103,16 @@ let tokenExpiry = 0;
 let isSuperAdminVerified = false;
 
 async function getAccessTokenAsync() {
-  const serviceAccountStr = process.env.FIREBASE_SERVICE_ACCOUNT;
+  let serviceAccountStr = process.env.FIREBASE_SERVICE_ACCOUNT;
   if (!serviceAccountStr) return null;
+  
+  serviceAccountStr = serviceAccountStr.trim();
+  if (serviceAccountStr.startsWith("'") && serviceAccountStr.endsWith("'")) {
+    serviceAccountStr = serviceAccountStr.slice(1, -1);
+  }
+  if (serviceAccountStr.startsWith('"') && serviceAccountStr.endsWith('"')) {
+    serviceAccountStr = serviceAccountStr.slice(1, -1);
+  }
   
   const now = Math.floor(Date.now() / 1000);
   if (cachedToken && tokenExpiry > now + 300) {
@@ -117,7 +125,18 @@ async function getAccessTokenAsync() {
   
   tokenPromise = (async () => {
     try {
-      const serviceAccount = JSON.parse(serviceAccountStr);
+      let serviceAccount;
+      if (serviceAccountStr.startsWith('{')) {
+        serviceAccount = JSON.parse(serviceAccountStr);
+      } else {
+        const decoded = Buffer.from(serviceAccountStr, 'base64').toString('utf8');
+        serviceAccount = JSON.parse(decoded);
+      }
+
+      if (!serviceAccount || !serviceAccount.client_email || !serviceAccount.private_key) {
+        throw new Error('FIREBASE_SERVICE_ACCOUNT JSON object is missing client_email or private_key.');
+      }
+
       const header = JSON.stringify({ alg: 'RS256', typ: 'JWT' });
       const headerBase64 = Buffer.from(header).toString('base64url');
       
@@ -151,10 +170,12 @@ async function getAccessTokenAsync() {
         tokenExpiry = expTime;
         return cachedToken;
       }
+      console.error('[Firestore OAuth] Token request failed:', json);
+      lastDbError = { context: 'getAccessTokenAsync_OAuthResponse', json };
       return null;
     } catch (err) {
       console.error('Failed to authenticate service account:', err);
-      lastDbError = { context: 'getAccessTokenAsync', message: err.message, stack: err.stack };
+      lastDbError = { context: 'getAccessTokenAsync_catch', message: err.message, stack: err.stack };
       return null;
     } finally {
       tokenPromise = null;
@@ -174,10 +195,16 @@ async function fetchAllFromFirestoreAsync() {
   ];
   
   const token = await getAccessTokenAsync();
-  const headers = { 'Content-Type': 'application/json' };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+  if (!token) {
+    console.error('[Firestore Async] Cannot fetch: FIREBASE_SERVICE_ACCOUNT token unavailable.');
+    lastDbError = { context: 'fetchAllFromFirestoreAsync_NoToken', message: 'FIREBASE_SERVICE_ACCOUNT environment variable is missing or invalid in production.' };
+    return null;
   }
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  };
   
   const url = 'https://firestore.googleapis.com/v1/projects/smart-school-management-66f78/databases/(default)/documents:batchGet';
   
@@ -191,16 +218,10 @@ async function fetchAllFromFirestoreAsync() {
       headers,
       body: JSON.stringify(body)
     });
-    
-    if (res.status === 403) {
-      console.log('[Firestore Async] Permission denied (403). Skipping Firestore.');
-      lastDbError = { context: 'fetchAllFromFirestoreAsync_HTTP_403', status: res.status };
-      return null;
-    }
 
     if (!res.ok) {
-      console.log('[Firestore Async] batchGet HTTP error:', res.status);
       const text = await res.text().catch(() => '');
+      console.error('[Firestore Async] batchGet HTTP error:', res.status, text);
       lastDbError = { context: 'fetchAllFromFirestoreAsync_HTTP_error', status: res.status, text };
       return null;
     }
@@ -326,56 +347,60 @@ async function initDb() {
         console.log('[Firestore Async] Fetching fresh database from Firestore...');
         const data = await fetchAllFromFirestoreAsync();
         
-        if (data && Object.keys(data).length > 0 && data.users && data.users.length > 0) {
-          dbCache = sanitizeCache(data);
-          dbCacheInitial = JSON.parse(JSON.stringify(dbCache));
-          dbCacheTimestamp = Date.now();
-          console.log('[Firestore Async] Loaded successfully.');
-          
-          if (!isSuperAdminVerified) {
-            const changed = ensureSuperAdminInMemory(dbCache);
-            if (changed) {
-              console.log('[Firestore Async] Syncing updated Super Admin to Firestore...');
-              try {
-                await writeToFirestoreAsync({ users: dbCache.users });
-                dbCacheInitial.users = JSON.parse(JSON.stringify(dbCache.users));
-              } catch (err) {
-                console.error('[Firestore Async] Syncing Super Admin failed:', err);
+        if (data && Object.keys(data).length > 0 && Array.isArray(data.users)) {
+          if (data.users.length > 0) {
+            dbCache = sanitizeCache(data);
+            dbCacheInitial = JSON.parse(JSON.stringify(dbCache));
+            dbCacheTimestamp = Date.now();
+            console.log('[Firestore Async] Loaded successfully.');
+            
+            if (!isSuperAdminVerified) {
+              const changed = ensureSuperAdminInMemory(dbCache);
+              if (changed) {
+                console.log('[Firestore Async] Syncing updated Super Admin to Firestore...');
+                try {
+                  await writeToFirestoreAsync({ users: dbCache.users });
+                  dbCacheInitial.users = JSON.parse(JSON.stringify(dbCache.users));
+                } catch (err) {
+                  console.error('[Firestore Async] Syncing Super Admin failed:', err);
+                }
               }
+              isSuperAdminVerified = true;
             }
-            isSuperAdminVerified = true;
-          }
-          return dbCache;
-        }
+            return dbCache;
+          } else {
+            // First run on a brand new empty database
+            console.log('[Firestore Async] Database empty on Firestore. Initializing with DEFAULT_DB.');
+            dbCache = sanitizeCache(null);
+            dbCacheInitial = JSON.parse(JSON.stringify(dbCache));
+            dbCacheTimestamp = Date.now();
+            
+            if (!isSuperAdminVerified) {
+              ensureSuperAdminInMemory(dbCache);
+              ensureSuperAdminInMemory(dbCacheInitial);
+              isSuperAdminVerified = true;
+            }
 
-        // Check if the fetch failed (returned null)
-        if (data === null) {
-          if (dbCache) {
-            console.warn('[Firestore Async] Fetch failed. Reusing stale memory dbCache to prevent crash/wipe.');
+            try {
+              await writeToFirestoreAsync(dbCache);
+            } catch (err) {
+              console.error('[Firestore Async] Failed to seed DEFAULT_DB:', err);
+            }
             return dbCache;
           }
-          throw new Error('Failed to fetch database from Google Cloud Firestore. Please check server logs and configuration.');
         }
 
-        // First run (fetch succeeded but empty database)
-        console.log('[Firestore Async] Database empty on Firestore. Initializing with DEFAULT_DB.');
-        dbCache = sanitizeCache(null);
-        dbCacheInitial = JSON.parse(JSON.stringify(dbCache));
-        dbCacheTimestamp = Date.now();
-        
-        if (!isSuperAdminVerified) {
-          ensureSuperAdminInMemory(dbCache);
-          ensureSuperAdminInMemory(dbCacheInitial);
-          isSuperAdminVerified = true;
+        // Fetch failed (returned null)
+        if (data === null) {
+          if (dbCache) {
+            console.warn('[Firestore Async] Fetch failed. Reusing existing in-memory dbCache.');
+            return dbCache;
+          }
+          const lastErr = lastDbError ? JSON.stringify(lastDbError) : 'Unknown Error';
+          throw new Error(`Production database connection failed: Unable to fetch from Firestore. Please verify FIREBASE_SERVICE_ACCOUNT environment variable on Vercel. Details: ${lastErr}`);
         }
 
-        // Seed the empty Firestore database with DEFAULT_DB
-        try {
-          await writeToFirestoreAsync(dbCache);
-        } catch (err) {
-          console.error('[Firestore Async] Failed to seed DEFAULT_DB:', err);
-        }
-        return dbCache;
+        throw new Error('Production database error: Invalid response received from Firestore.');
       } finally {
         initPromise = null;
       }
@@ -402,7 +427,7 @@ async function initDb() {
         try {
           fs.writeFileSync(resolvedPath, JSON.stringify(dbCache, null, 2), 'utf8');
         } catch (e) {
-          // ignore read-only filesystems
+          // ignore
         }
       }
       return dbCache;
@@ -424,14 +449,8 @@ function readDb() {
   if (dbCache) {
     return dbCache;
   }
-  // Synchronous fallback for local dev startup (non-vercel, non-async context)
   if (useFirestore) {
-    console.log('[Database] readDb synchronous fallback called in production.');
-    dbCache = sanitizeCache(null);
-    dbCacheInitial = JSON.parse(JSON.stringify(dbCache));
-    ensureSuperAdminInMemory(dbCache);
-    ensureSuperAdminInMemory(dbCacheInitial);
-    return dbCache;
+    throw new Error('Production Database Error: Database cache is not initialized. Call initDb() before readDb().');
   }
 
   ensureDb();
@@ -455,10 +474,14 @@ function readDb() {
 
 async function writeToFirestoreAsync(changedData) {
   const token = await getAccessTokenAsync();
-  const headers = { 'Content-Type': 'application/json' };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+  if (!token) {
+    throw new Error('Google Cloud Firestore write failed: FIREBASE_SERVICE_ACCOUNT environment variable is missing or invalid on Vercel.');
   }
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  };
   
   const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1/projects/smart-school-management-66f78/databases/(default)/documents/database';
   
@@ -489,7 +512,7 @@ async function writeToFirestoreAsync(changedData) {
 
 async function writeDb(data) {
   dbCache = data;
-  dbCacheTimestamp = Date.now(); // update cache timestamp on write to avoid read-after-write consistency issues
+  dbCacheTimestamp = Date.now();
 
   if (useFirestore) {
     const base = dbCacheInitial || sanitizeCache(null);

@@ -35,6 +35,18 @@ const SuperAdminLayout = () => {
       setAvatar(updatedUser?.profilePhoto || null);
     };
     window.addEventListener('avatarUpdate', handleUpdate);
+    
+    // Sync memoryStorage cache from backend for Super Admin
+    const syncData = async () => {
+      try {
+        const { syncAllSchoolData } = await import('../utils/db');
+        await syncAllSchoolData('SYSTEM');
+      } catch (e) {
+        console.warn('[SuperAdminLayout] Data sync warning:', e);
+      }
+    };
+    syncData();
+
     return () => window.removeEventListener('avatarUpdate', handleUpdate);
   }, []);
 
