@@ -92,6 +92,7 @@ import Gallery from './pages/schooladmin/Gallery';
 import Reports from './pages/schooladmin/Reports';
 import SettingsSA from './pages/schooladmin/Settings';
 import SupportCenterSA from './pages/schooladmin/SupportCenter';
+import TeacherSalaries from './pages/schooladmin/TeacherSalaries';
 
 function App() {
   return (
@@ -151,6 +152,7 @@ function App() {
           <Route path="fee-structure" element={<FeeStructure />} />
           <Route path="monthly-fees" element={<MonthlyFees />} />
           <Route path="collect-fees" element={<CollectFees />} />
+          <Route path="teacher-salaries" element={<TeacherSalaries />} />
           <Route path="exam-management" element={<ExamManagement />} />
           <Route path="marks-entry" element={<TeacherMarks />} />
           <Route path="result-processing" element={<ResultProcessing />} />

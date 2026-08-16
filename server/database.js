@@ -56,7 +56,8 @@ function ensureDb() {
         settings: [],
         attendance: {},
         qrSessions: [],
-        homework: []
+        homework: [],
+        teacherSalaries: []
       }, null, 2), 'utf8');
     }
   } catch (err) {
@@ -142,7 +143,7 @@ async function fetchAllFromFirestoreAsync() {
     'superAdminNotifications', 'superAdminAcademicTemplates', 'parentSupportConversations',
     'classes', 'subjects', 'teacherAssignments', 'feeStructures', 'monthlyFees', 'receipts',
     'exams', 'results', 'notices', 'gallery', 'fees', 'timetable', 'gradeScale',
-    'settings', 'attendance', 'qrSessions', 'homework', 'schoolAdminAttendance'
+    'settings', 'attendance', 'qrSessions', 'homework', 'schoolAdminAttendance', 'teacherSalaries'
   ];
   
   const token = await getAccessTokenAsync();
@@ -227,7 +228,7 @@ function sanitizeCache(cache) {
     'superAdminNotifications', 'superAdminAcademicTemplates', 'parentSupportConversations',
     'classes', 'subjects', 'teacherAssignments', 'feeStructures', 'monthlyFees', 'receipts',
     'exams', 'results', 'notices', 'gallery', 'fees', 'timetable', 'gradeScale',
-    'settings', 'attendance', 'qrSessions', 'homework', 'schoolAdminAttendance'
+    'settings', 'attendance', 'qrSessions', 'homework', 'schoolAdminAttendance', 'teacherSalaries'
   ];
   keys.forEach(key => {
     if (!cache[key]) {
@@ -465,7 +466,8 @@ const KEY_MAP = {
   systemLogs: 'systemLogs',
   superAdminNotifications: 'superAdminNotifications',
   superAdminAcademicTemplates: 'superAdminAcademicTemplates',
-  parentSupportConversations: 'parentSupportConversations'
+  parentSupportConversations: 'parentSupportConversations',
+  schoolAdminTeacherSalaries: 'teacherSalaries'
 };
 
 function getCollection(key, schoolId) {

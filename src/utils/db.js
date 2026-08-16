@@ -294,7 +294,8 @@ export async function syncAllSchoolData(schoolId) {
     'schoolAdminTimetable',
     'schoolAdminGradeScale',
     'schoolAdminSettings',
-    'schoolAdminAttendance'
+    'schoolAdminAttendance',
+    'schoolAdminTeacherSalaries'
   ];
 
   try {

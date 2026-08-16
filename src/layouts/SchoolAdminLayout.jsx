@@ -58,6 +58,7 @@ const SchoolAdminLayout = () => {
     { path: '/school-admin/fee-structure', icon: <CreditCard size={18} className="opacity-0 w-4" />, label: 'Fee Structure' },
     { path: '/school-admin/monthly-fees', icon: <CreditCard size={18} className="opacity-0 w-4" />, label: 'Monthly Fees' },
     { path: '/school-admin/collect-fees', icon: <CreditCard size={18} className="opacity-0 w-4" />, label: 'Collect Fees' },
+    { path: '/school-admin/teacher-salaries', icon: <CreditCard size={18} className="opacity-0 w-4" />, label: 'Teacher Salaries' },
     { path: '/school-admin/exam-management', icon: <ClipboardList size={18} />, label: 'Exam Management' },
     { path: '/school-admin/marks-entry', icon: <ClipboardList size={18} className="opacity-0 w-4" />, label: 'Marks Entry' },
     { path: '/school-admin/result-processing', icon: <ClipboardList size={18} className="opacity-0 w-4" />, label: 'Result Processing' },
