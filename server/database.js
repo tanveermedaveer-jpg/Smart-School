@@ -92,6 +92,7 @@ try {
 const useFirestore = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1' || process.env.USE_FIRESTORE === 'true';
 
 let dbCache = null;
+let dbCacheInitial = null;
 let initPromise = null;
 
 async function getAccessTokenAsync() {
@@ -145,39 +146,57 @@ async function fetchAllFromFirestoreAsync() {
   ];
   
   const token = await getAccessTokenAsync();
-  const headers = {};
+  const headers = { 'Content-Type': 'application/json' };
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
   
-  const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1/projects/smart-school-management-66f78/databases/(default)/documents/database';
+  const url = 'https://firestore.googleapis.com/v1/projects/smart-school-management-66f78/databases/(default)/documents:batchGet';
   
+  const body = {
+    documents: keys.map(key => `projects/smart-school-management-66f78/databases/(default)/documents/database/${key}`)
+  };
+
   try {
-    // Quick connectivity check: fetch 'users' first to verify access
-    const probeRes = await fetch(`${FIRESTORE_BASE}/users`, { headers });
-    if (probeRes.status === 403) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body)
+    });
+    
+    if (res.status === 403) {
       console.log('[Firestore Async] Permission denied (403). Skipping Firestore.');
       return null;
     }
 
-    const promises = keys.map(async key => {
-      try {
-        // Reuse probe result for 'users' to avoid duplicate fetch
-        const res = key === 'users' ? probeRes : await fetch(`${FIRESTORE_BASE}/${key}`, { headers });
-        if (res.status === 404) return [key, []];
-        const json = key === 'users' ? await probeRes.json() : await res.json();
-        if (json.fields && json.fields.data && json.fields.data.stringValue) {
-          return [key, JSON.parse(json.fields.data.stringValue)];
-        }
-        return [key, []];
-      } catch (err) {
-        return [key, []];
-      }
+    if (!res.ok) {
+      console.log('[Firestore Async] batchGet HTTP error:', res.status);
+      return null;
+    }
+
+    const resultsJson = await res.json();
+    const data = {};
+    keys.forEach(k => {
+      data[k] = [];
     });
-    const results = await Promise.all(promises);
-    return Object.fromEntries(results);
+
+    if (Array.isArray(resultsJson)) {
+      resultsJson.forEach(item => {
+        if (item.found && item.found.name && item.found.fields && item.found.fields.data && item.found.fields.data.stringValue) {
+          const docPath = item.found.name;
+          const key = docPath.substring(docPath.lastIndexOf('/') + 1);
+          try {
+            data[key] = JSON.parse(item.found.fields.data.stringValue);
+          } catch (e) {
+            console.error(`[Firestore Async] Failed to parse stringValue for key ${key}:`, e);
+          }
+        }
+      });
+    }
+    
+    return data;
   } catch (err) {
-    console.error('[Firestore Async] Fetch failed:', err);
+    console.error('[Firestore Async] batchGet failed:', err);
     return null;
   }
 }
@@ -260,34 +279,44 @@ function ensureSuperAdminInMemory(db) {
 }
 
 async function initDb() {
+  if (useFirestore) {
+    console.log('[Firestore Async] Fetching fresh database from Firestore...');
+    const data = await fetchAllFromFirestoreAsync();
+    if (data && Object.keys(data).length > 0 && data.users && data.users.length > 0) {
+      dbCache = sanitizeCache(data);
+      dbCacheInitial = JSON.parse(JSON.stringify(dbCache));
+      console.log('[Firestore Async] Loaded successfully.');
+      const changed = ensureSuperAdminInMemory(dbCache);
+      if (changed) {
+        console.log('[Firestore Async] Syncing updated Super Admin to Firestore...');
+        try {
+          await writeToFirestoreAsync({ users: dbCache.users });
+          dbCacheInitial.users = JSON.parse(JSON.stringify(dbCache.users));
+        } catch (err) {
+          console.error('[Firestore Async] Syncing Super Admin failed:', err);
+        }
+      }
+      return dbCache;
+    }
+    console.log('[Firestore Async] Database empty or fetch failed. Skipping db.json fallback in production.');
+    dbCache = sanitizeCache(null);
+    dbCacheInitial = JSON.parse(JSON.stringify(dbCache));
+    ensureSuperAdminInMemory(dbCache);
+    ensureSuperAdminInMemory(dbCacheInitial);
+    return dbCache;
+  }
+
   if (dbCache) return dbCache;
   if (initPromise) return initPromise;
   
   initPromise = (async () => {
-    if (useFirestore) {
-      console.log('[Firestore Async] Fetching database...');
-      const data = await fetchAllFromFirestoreAsync();
-      if (data && Object.keys(data).length > 0 && data.users && data.users.length > 0) {
-        dbCache = sanitizeCache(data);
-        console.log('[Firestore Async] Loaded successfully.');
-        const changed = ensureSuperAdminInMemory(dbCache);
-        if (changed) {
-          console.log('[Firestore Async] Syncing updated Super Admin to Firestore...');
-          writeToFirestoreAsync({ users: dbCache.users }).catch(err => {
-            console.error('[Firestore Async] Syncing Super Admin failed:', err);
-          });
-        }
-        return dbCache;
-      }
-      console.log('[Firestore Async] Database empty or fetch failed. Seeding from local file...');
-    }
-    
     ensureDb();
     try {
       const resolvedPath = findDbPath();
       console.log('[Database] Reading from:', resolvedPath);
       const raw = fs.readFileSync(resolvedPath, 'utf8');
       dbCache = sanitizeCache(JSON.parse(raw));
+      dbCacheInitial = JSON.parse(JSON.stringify(dbCache));
       
       const changed = ensureSuperAdminInMemory(dbCache);
       if (changed) {
@@ -298,21 +327,14 @@ async function initDb() {
           // ignore read-only filesystems
         }
       }
-      
-      // Async seed to firestore if empty
-      if (useFirestore && dbCache) {
-        console.log('[Firestore Async] Triggering background seed...');
-        writeToFirestoreAsync(dbCache).catch(err => {
-          console.error('[Firestore Async] Background seed failed:', err);
-        });
-      }
-      
       return dbCache;
     } catch (err) {
       console.error('Error reading database file:', err.message);
       console.log('[Database] Falling back to DEFAULT_DB');
       dbCache = sanitizeCache(null);
+      dbCacheInitial = JSON.parse(JSON.stringify(dbCache));
       ensureSuperAdminInMemory(dbCache);
+      ensureSuperAdminInMemory(dbCacheInitial);
       return dbCache;
     }
   })();
@@ -325,17 +347,30 @@ function readDb() {
     return dbCache;
   }
   // Synchronous fallback for local dev startup (non-vercel, non-async context)
+  if (useFirestore) {
+    console.log('[Database] readDb synchronous fallback called in production.');
+    dbCache = sanitizeCache(null);
+    dbCacheInitial = JSON.parse(JSON.stringify(dbCache));
+    ensureSuperAdminInMemory(dbCache);
+    ensureSuperAdminInMemory(dbCacheInitial);
+    return dbCache;
+  }
+
   ensureDb();
   try {
     const resolvedPath = findDbPath();
     const raw = fs.readFileSync(resolvedPath, 'utf8');
     dbCache = sanitizeCache(JSON.parse(raw));
+    dbCacheInitial = JSON.parse(JSON.stringify(dbCache));
     ensureSuperAdminInMemory(dbCache);
+    ensureSuperAdminInMemory(dbCacheInitial);
     return dbCache;
   } catch (err) {
     console.error('Error reading database file synchronously:', err);
     dbCache = sanitizeCache(null);
+    dbCacheInitial = JSON.parse(JSON.stringify(dbCache));
     ensureSuperAdminInMemory(dbCache);
+    ensureSuperAdminInMemory(dbCacheInitial);
     return dbCache;
   }
 }
@@ -369,32 +404,37 @@ async function writeToFirestoreAsync(changedData) {
   await Promise.all(promises);
 }
 
-function writeDb(data) {
-  const oldCache = dbCache;
+async function writeDb(data) {
   dbCache = data;
 
-  ensureDb();
-  try {
-    fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf8');
-  } catch (err) {
-    console.error('Error writing database file:', err);
-  }
+  if (useFirestore) {
+    if (dbCacheInitial) {
+      const changedData = {};
+      let hasChanges = false;
+      for (const key in data) {
+        if (JSON.stringify(data[key]) !== JSON.stringify(dbCacheInitial[key])) {
+          changedData[key] = data[key];
+          hasChanges = true;
+        }
+      }
 
-  if (useFirestore && oldCache) {
-    const changedData = {};
-    let hasChanges = false;
-    for (const key in data) {
-      if (JSON.stringify(data[key]) !== JSON.stringify(oldCache[key])) {
-        changedData[key] = data[key];
-        hasChanges = true;
+      if (hasChanges) {
+        console.log('[Firestore] Syncing changed collections to Firestore:', Object.keys(changedData));
+        try {
+          await writeToFirestoreAsync(changedData);
+          dbCacheInitial = JSON.parse(JSON.stringify(data));
+        } catch (err) {
+          console.error('[Firestore] Sync failed:', err);
+          throw err;
+        }
       }
     }
-
-    if (hasChanges) {
-      console.log('[Firestore Async] Syncing changed collections:', Object.keys(changedData));
-      writeToFirestoreAsync(changedData).catch(err => {
-        console.error('[Firestore Async] Background sync failed:', err);
-      });
+  } else {
+    ensureDb();
+    try {
+      fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf8');
+    } catch (err) {
+      console.error('Error writing database file:', err);
     }
   }
 }
@@ -528,7 +568,7 @@ function performSchoolDeletionCascade(db, deletedSchoolId) {
   });
 }
 
-function saveCollection(key, schoolId, updatedItems) {
+async function saveCollection(key, schoolId, updatedItems) {
   const db = readDb();
   const prop = KEY_MAP[key] || key;
   
@@ -726,7 +766,7 @@ function saveCollection(key, schoolId, updatedItems) {
     }
   }
 
-  writeDb(db);
+  await writeDb(db);
 }
 
 module.exports = {

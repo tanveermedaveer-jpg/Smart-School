@@ -214,7 +214,7 @@ app.get('/api/users/:userId', authenticateToken, (req, res) => {
   res.json(profile);
 });
 
-app.put('/api/users/:userId', authenticateToken, (req, res) => {
+app.put('/api/users/:userId', authenticateToken, async (req, res) => {
   const db = dbManager.readDb();
   const idx = db.users.findIndex(u => u.id.toString() === req.params.userId.toString());
   
@@ -246,7 +246,7 @@ app.put('/api/users/:userId', authenticateToken, (req, res) => {
       }
     }
     db.users.push(newUser);
-    dbManager.writeDb(db);
+    await dbManager.writeDb(db);
     
     const { password: _, ...profile } = newUser;
     return res.json(profile);
@@ -281,7 +281,7 @@ app.put('/api/users/:userId', authenticateToken, (req, res) => {
   }
 
   db.users[idx] = updatedUser;
-  dbManager.writeDb(db);
+  await dbManager.writeDb(db);
 
   const { password: _, parentPassword: __, ...profile } = updatedUser;
   res.json(profile);
@@ -294,7 +294,7 @@ app.get('/api/schools', authenticateToken, (req, res) => {
   res.json(schools);
 });
 
-app.post('/api/schools', authenticateToken, (req, res) => {
+app.post('/api/schools', authenticateToken, async (req, res) => {
   const userRole = normalizeRole(req.user.role);
   if (userRole !== 'superAdmin') {
     return res.status(403).json({ message: 'Access Denied: Only Super Admin can create schools.' });
@@ -303,11 +303,11 @@ app.post('/api/schools', authenticateToken, (req, res) => {
   const db = dbManager.readDb();
   const newSchool = { ...req.body };
   db.schools.push(newSchool);
-  dbManager.writeDb(db);
+  await dbManager.writeDb(db);
   res.status(201).json(newSchool);
 });
 
-app.delete('/api/schools/:schoolId', authenticateToken, (req, res) => {
+app.delete('/api/schools/:schoolId', authenticateToken, async (req, res) => {
   const userRole = normalizeRole(req.user.role);
   if (userRole !== 'superAdmin') {
     return res.status(403).json({ message: 'Access Denied: Only Super Admin can delete schools.' });
@@ -320,7 +320,7 @@ app.delete('/api/schools/:schoolId', authenticateToken, (req, res) => {
   // Cascading cleanup of all associated data
   dbManager.performSchoolDeletionCascade(db, sid);
 
-  dbManager.writeDb(db);
+  await dbManager.writeDb(db);
   res.json({ message: 'School and associated accounts deleted successfully.' });
 });
 
@@ -350,7 +350,7 @@ app.get('/api/collections/:key', authenticateToken, (req, res) => {
   res.json(items);
 });
 
-app.post('/api/collections/:key', authenticateToken, (req, res) => {
+app.post('/api/collections/:key', authenticateToken, async (req, res) => {
   const { key } = req.params;
   let schoolId = req.query.schoolId;
   
@@ -364,7 +364,7 @@ app.post('/api/collections/:key', authenticateToken, (req, res) => {
     return res.status(403).json({ message: 'Access Denied: Missing school association.' });
   }
 
-  dbManager.saveCollection(key, schoolId, req.body);
+  await dbManager.saveCollection(key, schoolId, req.body);
   res.json({ message: 'Collection saved successfully.' });
 });
 
@@ -387,7 +387,7 @@ app.get('/api/public/gallery', (req, res) => {
 });
 
 // Public: Submit admission application
-app.post('/api/public/admissions', (req, res) => {
+app.post('/api/public/admissions', async (req, res) => {
   const db = dbManager.readDb();
   const admission = req.body;
   if (!admission || !admission.schoolId) {
@@ -404,7 +404,7 @@ app.post('/api/public/admissions', (req, res) => {
 
   if (!db.admissions) db.admissions = [];
   db.admissions.push(newAdmission);
-  dbManager.writeDb(db);
+  await dbManager.writeDb(db);
   res.status(201).json(newAdmission);
 });
 
@@ -428,7 +428,7 @@ app.get('/api/gallery', authenticateToken, (req, res) => {
 });
 
 // Authenticated: Add gallery item (scoped by schoolId if schoolAdmin)
-app.post('/api/gallery', authenticateToken, (req, res) => {
+app.post('/api/gallery', authenticateToken, async (req, res) => {
   const db = dbManager.readDb();
   const role = normalizeRole(req.user.role);
   const { title, url, category, status } = req.body;
@@ -458,12 +458,12 @@ app.post('/api/gallery', authenticateToken, (req, res) => {
 
   if (!db.gallery) db.gallery = [];
   db.gallery.push(newItem);
-  dbManager.writeDb(db);
+  await dbManager.writeDb(db);
   res.status(201).json(newItem);
 });
 
 // Authenticated: Update gallery item
-app.put('/api/gallery/:id', authenticateToken, (req, res) => {
+app.put('/api/gallery/:id', authenticateToken, async (req, res) => {
   const db = dbManager.readDb();
   const role = normalizeRole(req.user.role);
   const { id } = req.params;
@@ -487,12 +487,12 @@ app.put('/api/gallery/:id', authenticateToken, (req, res) => {
     schoolId: item.schoolId // preserve schoolId
   };
 
-  dbManager.writeDb(db);
+  await dbManager.writeDb(db);
   res.json(db.gallery[idx]);
 });
 
 // Authenticated: Delete gallery item
-app.delete('/api/gallery/:id', authenticateToken, (req, res) => {
+app.delete('/api/gallery/:id', authenticateToken, async (req, res) => {
   const db = dbManager.readDb();
   const role = normalizeRole(req.user.role);
   const { id } = req.params;
@@ -509,7 +509,7 @@ app.delete('/api/gallery/:id', authenticateToken, (req, res) => {
   }
 
   db.gallery.splice(idx, 1);
-  dbManager.writeDb(db);
+  await dbManager.writeDb(db);
   res.json({ message: 'Gallery item deleted successfully.' });
 });
 
@@ -533,7 +533,7 @@ app.get('/api/admissions', authenticateToken, (req, res) => {
 });
 
 // Authenticated: Update admission application status
-app.put('/api/admissions/:id', authenticateToken, (req, res) => {
+app.put('/api/admissions/:id', authenticateToken, async (req, res) => {
   const db = dbManager.readDb();
   const role = normalizeRole(req.user.role);
   const { id } = req.params;
@@ -552,12 +552,12 @@ app.put('/api/admissions/:id', authenticateToken, (req, res) => {
 
   admission.status = status;
   db.admissions[idx] = admission;
-  dbManager.writeDb(db);
+  await dbManager.writeDb(db);
   res.json(admission);
 });
 
 // Authenticated: Delete admission application
-app.delete('/api/admissions/:id', authenticateToken, (req, res) => {
+app.delete('/api/admissions/:id', authenticateToken, async (req, res) => {
   const db = dbManager.readDb();
   const role = normalizeRole(req.user.role);
   const { id } = req.params;
@@ -574,7 +574,7 @@ app.delete('/api/admissions/:id', authenticateToken, (req, res) => {
   }
 
   db.admissions.splice(idx, 1);
-  dbManager.writeDb(db);
+  await dbManager.writeDb(db);
   res.json({ message: 'Admission application deleted successfully.' });
 });
 
@@ -588,15 +588,15 @@ app.get('/api/qr-sessions/:sessionId', authenticateToken, (req, res) => {
   res.json(session);
 });
 
-app.post('/api/qr-sessions', authenticateToken, (req, res) => {
+app.post('/api/qr-sessions', authenticateToken, async (req, res) => {
   const db = dbManager.readDb();
   const newSession = { ...req.body };
   db.qrSessions.push(newSession);
-  dbManager.writeDb(db);
+  await dbManager.writeDb(db);
   res.status(201).json(newSession);
 });
 
-app.post('/api/qr-sessions/:sessionId/scan', authenticateToken, (req, res) => {
+app.post('/api/qr-sessions/:sessionId/scan', authenticateToken, async (req, res) => {
   const db = dbManager.readDb();
   const idx = db.qrSessions.findIndex(s => s.id === req.params.sessionId);
   if (idx === -1) return res.status(404).json({ message: 'Session not found' });
@@ -617,7 +617,7 @@ app.post('/api/qr-sessions/:sessionId/scan', authenticateToken, (req, res) => {
 
   session.scannedStudents = [...(session.scannedStudents || []), scanRecord];
   db.qrSessions[idx] = session;
-  dbManager.writeDb(db);
+  await dbManager.writeDb(db);
 
   res.json(session);
 });
