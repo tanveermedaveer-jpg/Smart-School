@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Users, BookOpen, GraduationCap, UserCheck, Calendar, Bell, FileText, CheckCircle, Clock } from 'lucide-react';
 import ProfileHeaderCard from '../../components/ProfileHeaderCard';
+import { useAuth } from '../../context/AuthContext';
 
 const Dashboard = () => {
+  const { user: contextUser } = useAuth();
   const [stats, setStats] = useState({
     totalStudents: 0,
     totalTeachers: 0,
@@ -12,6 +14,8 @@ const Dashboard = () => {
   });
 
   const [recentAdmissions, setRecentAdmissions] = useState([]);
+  const [recentNotices, setRecentNotices] = useState([]);
+
   const safeParseJSON = (str, fallback) => {
     try {
       if (!str || str === 'undefined') return fallback;
@@ -21,15 +25,26 @@ const Dashboard = () => {
     }
   };
 
-  const authUser = safeParseJSON(sessionStorage.getItem('authUser'), {});
-  const schoolSettings = safeParseJSON(localStorage.getItem('schoolAdminSettings'), {});
-  const schools = safeParseJSON(localStorage.getItem('schools'), []);
+  const authUserString = sessionStorage.getItem('authUser');
+  const authUser = safeParseJSON(authUserString, contextUser || {}) || {};
+  const schoolSettings = safeParseJSON(localStorage.getItem('schoolAdminSettings'), {}) || {};
+  const schools = safeParseJSON(localStorage.getItem('schools'), []) || [];
 
-  const currentSchoolId = authUser.schoolId?.toString();
-  const mySchool = (schools.find(s => s.id?.toString() === currentSchoolId)) || (currentSchoolId ? {
+  const rawSchoolId = authUser.schoolId || authUser.school_id || contextUser?.schoolId || schoolSettings.schoolId;
+  const currentSchoolId = rawSchoolId ? rawSchoolId.toString().trim() : null;
+
+  const foundSchool = schools.find(s => {
+    if (!s) return false;
+    const sId = (s.id || s.schoolId || s.school_id || '').toString().trim();
+    return sId === currentSchoolId;
+  });
+
+  const mySchool = foundSchool || (currentSchoolId ? {
     id: currentSchoolId,
-    name: authUser.schoolName || schoolSettings.schoolName || authUser.name || 'School Portal',
-    code: authUser.schoolCode || currentSchoolId
+    name: authUser.schoolName || contextUser?.schoolName || schoolSettings.schoolName || (authUser.name ? `${authUser.name}'s School` : 'School Portal'),
+    code: authUser.schoolCode || contextUser?.schoolCode || schoolSettings.schoolCode || currentSchoolId,
+    email: authUser.email || contextUser?.email || '',
+    phone: authUser.phone || contextUser?.phone || schoolSettings.phone || ''
   } : null);
 
   useEffect(() => {

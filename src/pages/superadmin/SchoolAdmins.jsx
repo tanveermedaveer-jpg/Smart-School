@@ -82,12 +82,15 @@ const SchoolAdmins = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const selectedSchool = schools.find(s => s.id?.toString() === formData.schoolId?.toString());
+    const schoolName = selectedSchool ? selectedSchool.name : (formData.schoolName || '');
+    
     if (editingId) {
-      const updated = users.map(u => u.id === editingId ? { ...formData, id: editingId } : u);
+      const updated = users.map(u => u.id === editingId ? { ...formData, schoolName, id: editingId } : u);
       await saveToDb(updated);
       toast.success('School Admin updated successfully');
     } else {
-      const newAdmin = { ...formData, id: Date.now().toString(), isTemporaryPassword: false };
+      const newAdmin = { ...formData, schoolName, id: Date.now().toString(), isTemporaryPassword: false, role: 'schoolAdmin' };
       await saveToDb([...users, newAdmin]);
       toast.success('School Admin created successfully');
     }
