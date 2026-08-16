@@ -169,6 +169,7 @@ const Schools = () => {
     } catch (err) {
       console.error('Error saving schools:', err);
       toast.error('Failed to save changes to Firestore.');
+      throw err;
     }
   };
 
@@ -199,30 +200,55 @@ const Schools = () => {
       const newSchool = { ...formData, id: schoolId };
 
       try {
-        const selectedTemplate = templates.find(t => t.id === (formData.templateId || 'pakistan-school-template'));
-        if (!selectedTemplate) {
-          throw new Error('Selected Academic Template not found.');
-        }
+        const defaultTemplates = getDefaultTemplates();
+        const selectedTemplate = (templates && templates.length > 0)
+          ? (templates.find(t => t.id === (formData.templateId || 'pakistan-school-template')) || templates[0])
+          : defaultTemplates[0];
 
         // 1. Copy template classes and subjects to this school namespace
         const copiedClasses = [];
         const copiedSubjects = [];
 
-        selectedTemplate.classes.forEach((cls) => {
-          if (cls.groups) {
-            // Class 9 / 10 with academic groups
-            cls.groups.forEach((group) => {
-              const classId = `class-${schoolId}-${cls.id}-${group.id}`;
+        if (selectedTemplate && selectedTemplate.classes) {
+          selectedTemplate.classes.forEach((cls) => {
+            if (cls.groups) {
+              // Class 9 / 10 with academic groups
+              cls.groups.forEach((group) => {
+                const classId = `class-${schoolId}-${cls.id}-${group.id}`;
+                copiedClasses.push({
+                  id: classId,
+                  className: cls.name,
+                  section: group.name,
+                  capacity: '50',
+                  classTeacherId: '',
+                  schoolId: schoolId
+                });
+
+                (group.subjects || []).forEach((sub) => {
+                  copiedSubjects.push({
+                    id: `sub-${schoolId}-${sub.id}`,
+                    subjectName: sub.name,
+                    subjectCode: sub.code,
+                    classId: classId,
+                    teacherId: '',
+                    schoolId: schoolId,
+                    enabled: sub.enabled !== false
+                  });
+                });
+              });
+            } else {
+              // Normal Classes 1-8
+              const classId = `class-${schoolId}-${cls.id}`;
               copiedClasses.push({
                 id: classId,
                 className: cls.name,
-                section: group.name, // e.g. "Science Group" or "Computer Science Group"
+                section: 'A',
                 capacity: '50',
                 classTeacherId: '',
                 schoolId: schoolId
               });
 
-              (group.subjects || []).forEach((sub) => {
+              (cls.subjects || []).forEach((sub) => {
                 copiedSubjects.push({
                   id: `sub-${schoolId}-${sub.id}`,
                   subjectName: sub.name,
@@ -233,43 +259,27 @@ const Schools = () => {
                   enabled: sub.enabled !== false
                 });
               });
-            });
-          } else {
-            // Normal Classes 1-8
-            const classId = `class-${schoolId}-${cls.id}`;
-            copiedClasses.push({
-              id: classId,
-              className: cls.name,
-              section: 'A',
-              capacity: '50',
-              classTeacherId: '',
-              schoolId: schoolId
-            });
-
-            (cls.subjects || []).forEach((sub) => {
-              copiedSubjects.push({
-                id: `sub-${schoolId}-${sub.id}`,
-                subjectName: sub.name,
-                subjectCode: sub.code,
-                classId: classId,
-                teacherId: '',
-                schoolId: schoolId,
-                enabled: sub.enabled !== false
-              });
-            });
-          }
-        });
+            }
+          });
+        }
 
         // Write classes and subjects to Firestore
-        await saveClasses(schoolId, copiedClasses);
-        await saveCollection('schoolAdminSubjects', schoolId, copiedSubjects);
+        if (copiedClasses.length > 0) {
+          try {
+            await saveClasses(schoolId, copiedClasses);
+            await saveCollection('schoolAdminSubjects', schoolId, copiedSubjects);
+          } catch (templateErr) {
+            console.warn('[Classes/Subjects Init Warning]', templateErr);
+          }
+        }
 
         // Save School record
         await saveToDb([...schools, newSchool]);
         
-        toast.success(`School created successfully. Academic setup has been initialized from ${selectedTemplate.name}.`);
+        toast.success(`School created successfully.`);
         logSystemAction('School Created', 'Super Admin', 'Super Admin', newSchool.name);
       } catch (err) {
+        console.error('[Create School Error]', err);
         toast.error(`Failed to create school: ${err.message}`);
         return;
       }
