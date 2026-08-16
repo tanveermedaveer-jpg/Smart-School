@@ -112,7 +112,8 @@ app.get('/api/debug/db-error', (req, res) => {
   res.json({
     useFirestore: process.env.NODE_ENV === 'production' || process.env.VERCEL === '1' || process.env.USE_FIRESTORE === 'true',
     hasServiceAccount: !!process.env.FIREBASE_SERVICE_ACCOUNT,
-    envKeys: Object.keys(process.env),
+    vercelEnv: process.env.VERCEL_ENV,
+    vercelUrl: process.env.VERCEL_URL,
     lastDbError: dbManager.getLastDbError ? dbManager.getLastDbError() : null
   });
 });
