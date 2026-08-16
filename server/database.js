@@ -94,47 +94,72 @@ const useFirestore = process.env.NODE_ENV === 'production' || process.env.VERCEL
 
 let dbCache = null;
 let dbCacheInitial = null;
+let dbCacheTimestamp = 0;
 let initPromise = null;
+let tokenPromise = null;
+let cachedToken = null;
+let tokenExpiry = 0;
+let isSuperAdminVerified = false;
 
 async function getAccessTokenAsync() {
   const serviceAccountStr = process.env.FIREBASE_SERVICE_ACCOUNT;
   if (!serviceAccountStr) return null;
   
-  try {
-    const serviceAccount = JSON.parse(serviceAccountStr);
-    const header = JSON.stringify({ alg: 'RS256', typ: 'JWT' });
-    const headerBase64 = Buffer.from(header).toString('base64url');
-    
-    const now = Math.floor(Date.now() / 1000);
-    const claim = JSON.stringify({
-      iss: serviceAccount.client_email,
-      scope: 'https://www.googleapis.com/auth/datastore',
-      aud: 'https://oauth2.googleapis.com/token',
-      exp: now + 3600,
-      iat: now
-    });
-    const claimBase64 = Buffer.from(claim).toString('base64url');
-    
-    const jwtInput = `${headerBase64}.${claimBase64}`;
-    const crypto = require('crypto');
-    const sign = crypto.createSign('RSA-SHA256');
-    sign.update(jwtInput);
-    
-    const privateKey = serviceAccount.private_key.replace(/\\n/g, '\n');
-    const signature = sign.sign(privateKey, 'base64url');
-    const assertion = `${jwtInput}.${signature}`;
-    
-    const res = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${assertion}`
-    });
-    const json = await res.json();
-    return json.access_token;
-  } catch (err) {
-    console.error('Failed to authenticate service account:', err);
-    return null;
+  const now = Math.floor(Date.now() / 1000);
+  if (cachedToken && tokenExpiry > now + 300) {
+    return cachedToken;
   }
+  
+  if (tokenPromise) {
+    return tokenPromise;
+  }
+  
+  tokenPromise = (async () => {
+    try {
+      const serviceAccount = JSON.parse(serviceAccountStr);
+      const header = JSON.stringify({ alg: 'RS256', typ: 'JWT' });
+      const headerBase64 = Buffer.from(header).toString('base64url');
+      
+      const expTime = now + 3600;
+      const claim = JSON.stringify({
+        iss: serviceAccount.client_email,
+        scope: 'https://www.googleapis.com/auth/datastore',
+        aud: 'https://oauth2.googleapis.com/token',
+        exp: expTime,
+        iat: now
+      });
+      const claimBase64 = Buffer.from(claim).toString('base64url');
+      
+      const jwtInput = `${headerBase64}.${claimBase64}`;
+      const crypto = require('crypto');
+      const sign = crypto.createSign('RSA-SHA256');
+      sign.update(jwtInput);
+      
+      const privateKey = serviceAccount.private_key.replace(/\\n/g, '\n');
+      const signature = sign.sign(privateKey, 'base64url');
+      const assertion = `${jwtInput}.${signature}`;
+      
+      const res = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${assertion}`
+      });
+      const json = await res.json();
+      if (json.access_token) {
+        cachedToken = json.access_token;
+        tokenExpiry = expTime;
+        return cachedToken;
+      }
+      return null;
+    } catch (err) {
+      console.error('Failed to authenticate service account:', err);
+      return null;
+    } finally {
+      tokenPromise = null;
+    }
+  })();
+  
+  return tokenPromise;
 }
 
 async function fetchAllFromFirestoreAsync() {
@@ -281,30 +306,76 @@ function ensureSuperAdminInMemory(db) {
 
 async function initDb() {
   if (useFirestore) {
-    console.log('[Firestore Async] Fetching fresh database from Firestore...');
-    const data = await fetchAllFromFirestoreAsync();
-    if (data && Object.keys(data).length > 0 && data.users && data.users.length > 0) {
-      dbCache = sanitizeCache(data);
-      dbCacheInitial = JSON.parse(JSON.stringify(dbCache));
-      console.log('[Firestore Async] Loaded successfully.');
-      const changed = ensureSuperAdminInMemory(dbCache);
-      if (changed) {
-        console.log('[Firestore Async] Syncing updated Super Admin to Firestore...');
-        try {
-          await writeToFirestoreAsync({ users: dbCache.users });
-          dbCacheInitial.users = JSON.parse(JSON.stringify(dbCache.users));
-        } catch (err) {
-          console.error('[Firestore Async] Syncing Super Admin failed:', err);
-        }
-      }
+    const now = Date.now();
+    if (dbCache && now - dbCacheTimestamp < 5000) {
       return dbCache;
     }
-    console.log('[Firestore Async] Database empty or fetch failed. Skipping db.json fallback in production.');
-    dbCache = sanitizeCache(null);
-    dbCacheInitial = JSON.parse(JSON.stringify(dbCache));
-    ensureSuperAdminInMemory(dbCache);
-    ensureSuperAdminInMemory(dbCacheInitial);
-    return dbCache;
+
+    if (initPromise) {
+      return initPromise;
+    }
+
+    initPromise = (async () => {
+      try {
+        console.log('[Firestore Async] Fetching fresh database from Firestore...');
+        const data = await fetchAllFromFirestoreAsync();
+        
+        if (data && Object.keys(data).length > 0 && data.users && data.users.length > 0) {
+          dbCache = sanitizeCache(data);
+          dbCacheInitial = JSON.parse(JSON.stringify(dbCache));
+          dbCacheTimestamp = Date.now();
+          console.log('[Firestore Async] Loaded successfully.');
+          
+          if (!isSuperAdminVerified) {
+            const changed = ensureSuperAdminInMemory(dbCache);
+            if (changed) {
+              console.log('[Firestore Async] Syncing updated Super Admin to Firestore...');
+              try {
+                await writeToFirestoreAsync({ users: dbCache.users });
+                dbCacheInitial.users = JSON.parse(JSON.stringify(dbCache.users));
+              } catch (err) {
+                console.error('[Firestore Async] Syncing Super Admin failed:', err);
+              }
+            }
+            isSuperAdminVerified = true;
+          }
+          return dbCache;
+        }
+
+        // Check if the fetch failed (returned null)
+        if (data === null) {
+          if (dbCache) {
+            console.warn('[Firestore Async] Fetch failed. Reusing stale memory dbCache to prevent crash/wipe.');
+            return dbCache;
+          }
+          throw new Error('Failed to fetch database from Google Cloud Firestore. Please check server logs and configuration.');
+        }
+
+        // First run (fetch succeeded but empty database)
+        console.log('[Firestore Async] Database empty on Firestore. Initializing with DEFAULT_DB.');
+        dbCache = sanitizeCache(null);
+        dbCacheInitial = JSON.parse(JSON.stringify(dbCache));
+        dbCacheTimestamp = Date.now();
+        
+        if (!isSuperAdminVerified) {
+          ensureSuperAdminInMemory(dbCache);
+          ensureSuperAdminInMemory(dbCacheInitial);
+          isSuperAdminVerified = true;
+        }
+
+        // Seed the empty Firestore database with DEFAULT_DB
+        try {
+          await writeToFirestoreAsync(dbCache);
+        } catch (err) {
+          console.error('[Firestore Async] Failed to seed DEFAULT_DB:', err);
+        }
+        return dbCache;
+      } finally {
+        initPromise = null;
+      }
+    })();
+
+    return initPromise;
   }
 
   if (dbCache) return dbCache;
@@ -399,6 +470,11 @@ async function writeToFirestoreAsync(changedData) {
       headers,
       body: JSON.stringify(body)
     });
+    
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Google Cloud Firestore write failed for key ${key} with status ${res.status}: ${errText}`);
+    }
     return res.status;
   });
   
@@ -407,27 +483,27 @@ async function writeToFirestoreAsync(changedData) {
 
 async function writeDb(data) {
   dbCache = data;
+  dbCacheTimestamp = Date.now(); // update cache timestamp on write to avoid read-after-write consistency issues
 
   if (useFirestore) {
-    if (dbCacheInitial) {
-      const changedData = {};
-      let hasChanges = false;
-      for (const key in data) {
-        if (JSON.stringify(data[key]) !== JSON.stringify(dbCacheInitial[key])) {
-          changedData[key] = data[key];
-          hasChanges = true;
-        }
+    const base = dbCacheInitial || sanitizeCache(null);
+    const changedData = {};
+    let hasChanges = false;
+    for (const key in data) {
+      if (JSON.stringify(data[key]) !== JSON.stringify(base[key])) {
+        changedData[key] = data[key];
+        hasChanges = true;
       }
+    }
 
-      if (hasChanges) {
-        console.log('[Firestore] Syncing changed collections to Firestore:', Object.keys(changedData));
-        try {
-          await writeToFirestoreAsync(changedData);
-          dbCacheInitial = JSON.parse(JSON.stringify(data));
-        } catch (err) {
-          console.error('[Firestore] Sync failed:', err);
-          throw err;
-        }
+    if (hasChanges) {
+      console.log('[Firestore] Syncing changed collections to Firestore:', Object.keys(changedData));
+      try {
+        await writeToFirestoreAsync(changedData);
+        dbCacheInitial = JSON.parse(JSON.stringify(data));
+      } catch (err) {
+        console.error('[Firestore] Sync failed:', err);
+        throw err;
       }
     }
   } else {
