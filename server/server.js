@@ -37,6 +37,9 @@ app.use((req, res, next) => {
 });
 
 app.use(async (req, res, next) => {
+  if (req.path === '/api/debug/db-error' || req.path === '/api/debug-paths') {
+    return next();
+  }
   try {
     await dbManager.initDb();
     next();
