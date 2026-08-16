@@ -185,6 +185,21 @@ async function getAccessTokenAsync() {
   return tokenPromise;
 }
 
+function getFirestoreProjectId() {
+  if (process.env.FIREBASE_PROJECT_ID) return process.env.FIREBASE_PROJECT_ID;
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    try {
+      let str = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
+      if ((str.startsWith("'") && str.endsWith("'")) || (str.startsWith('"') && str.endsWith('"'))) {
+        str = str.slice(1, -1);
+      }
+      const parsed = str.startsWith('{') ? JSON.parse(str) : JSON.parse(Buffer.from(str, 'base64').toString('utf8'));
+      if (parsed && parsed.project_id) return parsed.project_id;
+    } catch (e) {}
+  }
+  return 'smart-school-management-9ffe3';
+}
+
 async function fetchAllFromFirestoreAsync() {
   const keys = [
     'users', 'schools', 'admissions', 'demoRequests', 'contactMessages', 'systemLogs',
@@ -206,10 +221,11 @@ async function fetchAllFromFirestoreAsync() {
     'Authorization': `Bearer ${token}`
   };
   
-  const url = 'https://firestore.googleapis.com/v1/projects/smart-school-management-66f78/databases/(default)/documents:batchGet';
+  const projectId = getFirestoreProjectId();
+  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:batchGet`;
   
   const body = {
-    documents: keys.map(key => `projects/smart-school-management-66f78/databases/(default)/documents/database/${key}`)
+    documents: keys.map(key => `projects/${projectId}/databases/(default)/documents/database/${key}`)
   };
 
   try {
@@ -483,7 +499,8 @@ async function writeToFirestoreAsync(changedData) {
     'Authorization': `Bearer ${token}`
   };
   
-  const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1/projects/smart-school-management-66f78/databases/(default)/documents/database';
+  const projectId = getFirestoreProjectId();
+  const FIRESTORE_BASE = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/database`;
   
   const promises = Object.keys(changedData).map(async key => {
     const body = {
@@ -729,11 +746,14 @@ async function saveCollection(key, schoolId, updatedItems) {
 
     if (!schoolId || schoolId === 'SYSTEM') {
       // Super Admin is saving School Admins
-      const nonSchoolAdmins = db.users.filter(u => {
-        const role = normalizeRole(u.role);
-        return role !== 'schoolAdmin';
+      // Merge items by ID to preserve all existing users
+      const userMap = new Map((db.users || []).map(u => [u.id ? u.id.toString() : Math.random().toString(), u]));
+      hashedItems.forEach(u => {
+        if (u.id) {
+          userMap.set(u.id.toString(), u);
+        }
       });
-      db.users = [...nonSchoolAdmins, ...hashedItems];
+      db.users = Array.from(userMap.values());
     } else {
       // School Admin is saving their school's users (teachers, students, parents)
       // We must preserve:
@@ -762,14 +782,15 @@ async function saveCollection(key, schoolId, updatedItems) {
   } else {
     if (!schoolId || schoolId === 'SYSTEM') {
       if (prop === 'schools') {
-        const currentSchools = db.schools || [];
-        const newSchoolIds = new Set(items.map(s => s.id && s.id.toString()));
-        currentSchools.forEach(s => {
-          if (s.id && !newSchoolIds.has(s.id.toString())) {
-            console.log(`[Database] School ${s.name} (${s.id}) was deleted. Triggering cascading cleanup...`);
-            performSchoolDeletionCascade(db, s.id);
+        const schoolMap = new Map((db.schools || []).map(s => [s.id ? s.id.toString() : Math.random().toString(), s]));
+        items.forEach(school => {
+          if (school.id) {
+            const sidStr = school.id.toString();
+            const existingSchool = schoolMap.get(sidStr);
+            schoolMap.set(sidStr, existingSchool ? { ...existingSchool, ...school } : school);
           }
         });
+        db.schools = Array.from(schoolMap.values());
 
         // Sync school logo/banner uploads to gallery and avoid duplicate storage
         if (!db.gallery) db.gallery = [];

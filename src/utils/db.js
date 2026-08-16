@@ -110,10 +110,30 @@ export async function upsertUser(user) {
   }
 }
 
+export async function deleteSchoolRecord(schoolId) {
+  const res = await fetch(`${BASE_URL}/schools/${schoolId}`, {
+    method: 'DELETE',
+    headers: getHeaders()
+  });
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    throw new Error(`Failed to delete school: ${res.status} ${errText}`);
+  }
+  return res.json();
+}
+
 export async function deleteUser(userId) {
-  const users = await getAllUsersRaw();
-  const updated = users.filter(u => u.id !== userId);
-  await saveSchoolAdmins(updated);
+  const res = await fetch(`${BASE_URL}/users/${userId}`, {
+    method: 'DELETE',
+    headers: getHeaders()
+  });
+  if (!res.ok) {
+    const users = await getAllUsersRaw();
+    const updated = users.filter(u => u.id !== userId);
+    await saveSchoolAdmins(updated);
+    return;
+  }
+  return res.json();
 }
 
 export async function getClassesBySchool(schoolId) {

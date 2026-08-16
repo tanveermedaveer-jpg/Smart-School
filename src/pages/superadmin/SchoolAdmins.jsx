@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, X, Shield } from 'lucide-react';
 import toast from 'react-hot-toast';
 import PasswordInput from '../../components/PasswordInput';
-import { saveSchoolAdmins, getAllUsersRaw, getSchools } from '../../utils/db';
+import { saveSchoolAdmins, getAllUsersRaw, getSchools, deleteUser } from '../../utils/db';
 
 const SchoolAdmins = () => {
   const [users, setUsers] = useState([]);
@@ -96,8 +96,15 @@ const SchoolAdmins = () => {
 
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this admin account?')) {
-      await saveToDb(users.filter(u => u.id !== id));
-      toast.success('School Admin deleted');
+      try {
+        await deleteUser(id);
+        const updated = users.filter(u => u.id !== id);
+        setUsers(updated);
+        toast.success('School Admin deleted successfully');
+      } catch (err) {
+        console.error('Error deleting school admin:', err);
+        toast.error('Failed to delete school admin');
+      }
     }
   };
 

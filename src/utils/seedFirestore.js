@@ -7,11 +7,13 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 
+const projectId = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID ? import.meta.env.VITE_FIREBASE_PROJECT_ID : 'smart-school-management-9ffe3';
+
 const firebaseConfig = {
   apiKey: "AIzaSyANTZA3cfuBMhX_awV0r3ppHwSTsKrr4A0",
-  authDomain: "smart-school-management-66f78.firebaseapp.com",
-  projectId: "smart-school-management-66f78",
-  storageBucket: "smart-school-management-66f78.firebasestorage.app",
+  authDomain: `${projectId}.firebaseapp.com`,
+  projectId: projectId,
+  storageBucket: `${projectId}.firebasestorage.app`,
   messagingSenderId: "827262974475",
   appId: "1:827262974475:web:683d931e25440c3247a50e",
   measurementId: "G-MCCHNGMS6M"

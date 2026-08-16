@@ -3,7 +3,7 @@ import ExportButtons from '../../components/ExportButtons';
 import { Plus, Edit, Trash2, X, School, ScrollText } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { logSystemAction, getActivityLogs } from '../../utils/logger';
-import { getSchools, saveSchools, upsertUser, saveClasses, saveCollection, getCollection } from '../../utils/db';
+import { getSchools, saveSchools, upsertUser, saveClasses, saveCollection, getCollection, deleteSchoolRecord } from '../../utils/db';
 
 const getDefaultTemplates = () => {
   const defaultClasses = [];
@@ -291,8 +291,16 @@ const Schools = () => {
 
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this school?')) {
-      await saveToDb(schools.filter(s => s.id !== id));
-      toast.success('School deleted');
+      try {
+        await deleteSchoolRecord(id);
+        const updated = schools.filter(s => s.id !== id);
+        setSchools(updated);
+        localStorage.setItem('schools', JSON.stringify(updated));
+        toast.success('School deleted successfully');
+      } catch (err) {
+        console.error('Error deleting school:', err);
+        toast.error('Failed to delete school');
+      }
     }
   };
 

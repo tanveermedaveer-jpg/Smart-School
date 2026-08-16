@@ -300,6 +300,34 @@ app.put('/api/users/:userId', authenticateToken, async (req, res) => {
   res.json(profile);
 });
 
+app.delete('/api/users/:userId', authenticateToken, async (req, res) => {
+  const db = dbManager.readDb();
+  const targetId = req.params.userId.toString();
+  const idx = db.users.findIndex(u => u.id && u.id.toString() === targetId);
+  
+  if (idx === -1) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  const targetUser = db.users[idx];
+  const userRole = normalizeRole(req.user.role);
+
+  if (userRole !== 'superAdmin' && req.user.id.toString() !== targetId) {
+    if (userRole === 'schoolAdmin') {
+      const targetSchoolId = targetUser.schoolId || targetUser.school_id;
+      if (!targetSchoolId || targetSchoolId.toString() !== req.user.schoolId.toString()) {
+        return res.status(403).json({ message: 'Access Denied: You can only delete users of your own school.' });
+      }
+    } else {
+      return res.status(403).json({ message: 'Access Denied: Unauthorized to delete users.' });
+    }
+  }
+
+  db.users.splice(idx, 1);
+  await dbManager.writeDb(db);
+  res.json({ message: 'User deleted successfully' });
+});
+
 // ─── SCHOOLS ENDPOINTS ───────────────────────────────────────────────────
 
 app.get('/api/schools', authenticateToken, (req, res) => {
