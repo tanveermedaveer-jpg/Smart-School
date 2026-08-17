@@ -4,10 +4,9 @@ import {
   LayoutDashboard, Users, BookOpen, UserCheck, UserPlus, 
   GraduationCap, CreditCard, ClipboardList, Calendar, 
   Bell, Image as ImageIcon, FileText, Settings, LogOut,
-  LifeBuoy, Sun, Moon
+  LifeBuoy, Sun, Moon, Menu, X
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
-
 import { useAuth } from '../context/AuthContext';
 
 const SchoolAdminLayout = () => {
@@ -19,6 +18,7 @@ const SchoolAdminLayout = () => {
 
   const [avatar, setAvatar] = useState(authUser?.profilePhoto || null);
   const [isSyncing, setIsSyncing] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleUpdate = () => {
@@ -89,16 +89,38 @@ const SchoolAdminLayout = () => {
 
   return (
     <div className="flex h-screen bg-gray-100 font-poppins overflow-hidden" data-theme={isDark ? 'dark' : 'light'}>
-      <aside className="w-64 bg-darkBlue text-white flex flex-col h-full shrink-0 shadow-2xl z-20 relative border-r border-white/5">
+      
+      {/* Mobile Overlay Backdrop */}
+      {isMobileMenuOpen && (
+        <div 
+          onClick={() => setIsMobileMenuOpen(false)}
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm transition-opacity"
+        />
+      )}
+
+      {/* Sidebar (Desktop + Mobile Slide-over Drawer) */}
+      <aside className={`
+        fixed inset-y-0 left-0 z-50 w-64 bg-darkBlue text-white flex flex-col h-full shrink-0 shadow-2xl transition-transform duration-300 ease-in-out border-r border-white/5
+        lg:static lg:translate-x-0
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
         {/* Sidebar Brand Header */}
-        <div className="p-6 border-b border-white/10 flex flex-col items-center justify-center">
-          <div className="flex items-center space-x-2.5">
-            <span className="w-2 h-2 bg-greenAccent rounded-full animate-pulse shadow-sm"></span>
-            <h1 className="text-lg font-black text-center leading-none tracking-wide text-white">
-              Smart School
-            </h1>
+        <div className="p-6 border-b border-white/10 flex items-center justify-between lg:justify-center">
+          <div className="flex flex-col items-center">
+            <div className="flex items-center space-x-2.5">
+              <span className="w-2 h-2 bg-greenAccent rounded-full animate-pulse shadow-sm"></span>
+              <h1 className="text-lg font-black text-center leading-none tracking-wide text-white">
+                Smart School
+              </h1>
+            </div>
+            <span className="text-[9px] uppercase font-bold text-greenAccent mt-1.5 tracking-widest leading-none">School Admin</span>
           </div>
-          <span className="text-[9px] uppercase font-bold text-greenAccent mt-1.5 tracking-widest leading-none">School Admin</span>
+          <button 
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="lg:hidden p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+          >
+            <X size={20} />
+          </button>
         </div>
         
         {/* Sidebar Nav Items */}
@@ -108,6 +130,7 @@ const SchoolAdminLayout = () => {
               key={item.path}
               to={item.path}
               end={item.end}
+              onClick={() => setIsMobileMenuOpen(false)}
               className={({ isActive }) => 
                 `flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 relative ${
                   isActive 
@@ -141,10 +164,21 @@ const SchoolAdminLayout = () => {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto bg-gray-50 flex flex-col">
+      {/* Main Content Area */}
+      <main className="flex-1 overflow-y-auto bg-gray-50 flex flex-col min-w-0">
         {/* Dashboard Header */}
-        <header className="bg-white border-b border-slate-100 h-16 flex items-center px-8 shrink-0 justify-end sticky top-0 z-10 shadow-sm">
-           <div className="flex items-center space-x-4">
+        <header className="bg-white border-b border-slate-100 h-16 flex items-center px-4 sm:px-8 shrink-0 justify-between lg:justify-end sticky top-0 z-10 shadow-sm">
+          
+          {/* Mobile Hamburger Toggle Button */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="lg:hidden p-2 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors"
+            aria-label="Toggle Navigation Menu"
+          >
+            <Menu size={22} />
+          </button>
+
+          <div className="flex items-center space-x-3">
              {/* Portal Theme Toggle */}
              <button
                onClick={toggleTheme}
@@ -158,21 +192,21 @@ const SchoolAdminLayout = () => {
              <div className="h-6 w-px bg-slate-200 dark:bg-white/10" />
 
              {/* Admin User Details */}
-             <div className="flex items-center space-x-3">
-               <div className="w-8 h-8 bg-greenAccent rounded-full flex items-center justify-center text-white font-bold text-xs uppercase shadow-sm overflow-hidden">
+             <div className="flex items-center space-x-2 sm:space-x-3">
+               <div className="w-8 h-8 bg-greenAccent rounded-full flex items-center justify-center text-white font-bold text-xs uppercase shadow-sm overflow-hidden shrink-0">
                  {avatar ? (
                    <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
                  ) : (
                    authUser?.name?.substring(0,2) || 'SA'
                  )}
                </div>
-               <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{authUser?.name || 'School Admin'}</span>
+               <span className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 truncate max-w-[120px] sm:max-w-none">{authUser?.name || 'School Admin'}</span>
              </div>
            </div>
         </header>
         
         {/* Main Content Viewport */}
-        <div className="p-8 flex-1">
+        <div className="p-4 sm:p-6 md:p-8 flex-1 max-w-full overflow-x-hidden">
           <Outlet />
         </div>
       </main>

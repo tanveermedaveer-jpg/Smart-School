@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, UserCheck, Book, Award, 
-  Calendar, Bell, User, LogOut, CreditCard, Sun, Moon
+  Calendar, Bell, User, LogOut, CreditCard, Sun, Moon, Menu, X
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
@@ -14,6 +14,7 @@ const StudentLayout = () => {
 
   const [avatar, setAvatar] = useState(authUser?.profilePhoto || null);
   const [isSyncing, setIsSyncing] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleUpdate = () => {
@@ -66,9 +67,29 @@ const StudentLayout = () => {
 
   return (
     <div className="flex h-screen bg-gray-100 font-poppins overflow-hidden" data-theme={isDark ? 'dark' : 'light'}>
-      <aside className="w-64 bg-darkBlue text-white flex flex-col h-full shrink-0 shadow-xl z-20 relative">
-        <div className="p-6 border-b border-white/10 flex items-center justify-center">
+      
+      {/* Mobile Overlay Backdrop */}
+      {isMobileMenuOpen && (
+        <div 
+          onClick={() => setIsMobileMenuOpen(false)}
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm transition-opacity"
+        />
+      )}
+
+      {/* Sidebar (Desktop + Mobile Slide-over Drawer) */}
+      <aside className={`
+        fixed inset-y-0 left-0 z-50 w-64 bg-darkBlue text-white flex flex-col h-full shrink-0 shadow-2xl transition-transform duration-300 ease-in-out border-r border-white/5
+        lg:static lg:translate-x-0
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        <div className="p-6 border-b border-white/10 flex items-center justify-between lg:justify-center">
           <h1 className="text-xl font-bold text-center leading-tight">Student<br/><span className="text-sm font-light text-greenAccent">Portal</span></h1>
+          <button 
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="lg:hidden p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+          >
+            <X size={20} />
+          </button>
         </div>
         
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
@@ -77,6 +98,7 @@ const StudentLayout = () => {
               key={item.path}
               to={item.path}
               end={item.end}
+              onClick={() => setIsMobileMenuOpen(false)}
               className={({ isActive }) => 
                 `flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 relative ${
                   isActive 
@@ -109,13 +131,24 @@ const StudentLayout = () => {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto bg-gray-50 flex flex-col">
-        <header className="bg-white border-b border-gray-200 h-16 flex items-center px-8 shrink-0 justify-end sticky top-0 z-10 shadow-sm">
-           <div className="flex items-center space-x-4">
+      {/* Main Content Area */}
+      <main className="flex-1 overflow-y-auto bg-gray-50 flex flex-col min-w-0">
+        <header className="bg-white border-b border-gray-200 h-16 flex items-center px-4 sm:px-8 shrink-0 justify-between lg:justify-end sticky top-0 z-10 shadow-sm">
+          
+          {/* Mobile Hamburger Toggle Button */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="lg:hidden p-2 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors"
+            aria-label="Toggle Navigation Menu"
+          >
+            <Menu size={22} />
+          </button>
+
+          <div className="flex items-center space-x-3">
              {/* Portal Theme Toggle */}
              <button
                onClick={toggleTheme}
-               className="portal-theme-toggle"
+               className="portal-theme-toggle mr-1 sm:mr-2"
                title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
                aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
              >
@@ -124,19 +157,19 @@ const StudentLayout = () => {
 
              <div className="h-6 w-px bg-gray-200" />
 
-             <div className="flex items-center space-x-3">
-               <div className="w-8 h-8 bg-greenAccent rounded-full flex items-center justify-center text-white font-bold text-sm uppercase overflow-hidden">
+             <div className="flex items-center space-x-2 sm:space-x-3">
+               <div className="w-8 h-8 bg-greenAccent rounded-full flex items-center justify-center text-white font-bold text-sm uppercase overflow-hidden shrink-0">
                  {avatar ? (
                    <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
                  ) : (
                    authUser?.name?.substring(0,2) || 'S'
                  )}
                </div>
-               <span className="text-sm font-medium text-gray-700">{authUser?.name || 'Student'}</span>
+               <span className="text-xs sm:text-sm font-medium text-gray-700 truncate max-w-[120px] sm:max-w-none">{authUser?.name || 'Student'}</span>
              </div>
            </div>
         </header>
-        <div className="p-8 flex-1">
+        <div className="p-4 sm:p-6 md:p-8 flex-1 max-w-full overflow-x-hidden">
           <Outlet />
         </div>
       </main>
