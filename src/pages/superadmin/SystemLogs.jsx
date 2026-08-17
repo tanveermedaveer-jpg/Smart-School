@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Download, Filter, FileText, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { deleteSystemLog, deleteAllSystemLogs, getActivityLogs } from '../../utils/logger';
+import { exportToCSV, exportToPDF } from '../../utils/exportUtils';
 
 const SystemLogs = () => {
   const [logs, setLogs] = useState([]);
@@ -65,12 +66,11 @@ const SystemLogs = () => {
   };
 
   const handleExportPDF = () => {
-    toast.success('PDF export initiated (Mock)');
-    window.print(); // Simple mock behavior
+    exportToPDF('export-table', 'System_Logs', 'System Activity Logs');
   };
 
   const handleExportExcel = () => {
-    toast.success('Excel export downloaded (Mock)');
+    exportToCSV('export-table', 'System_Logs');
   };
 
   const filteredLogs = logs.filter(log => {
@@ -94,24 +94,24 @@ const SystemLogs = () => {
         <div className="flex space-x-3">
           <button 
             onClick={handleExportExcel}
-            className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+            className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors text-sm font-medium"
           >
-            <Download size={20} />
+            <Download size={18} />
             <span>Export Excel</span>
           </button>
           <button 
             onClick={handleExportPDF}
-            className="bg-darkBlue hover:bg-blue-900 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+            className="bg-darkBlue hover:bg-blue-900 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors text-sm font-medium"
           >
-            <FileText size={20} />
+            <FileText size={18} />
             <span>Export PDF</span>
           </button>
           <button 
             onClick={handleDeleteAllLogs}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors shadow-sm"
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors shadow-sm text-sm font-medium"
             title="Delete All Logs"
           >
-            <Trash2 size={20} />
+            <Trash2 size={18} />
             <span>Delete All</span>
           </button>
         </div>
@@ -154,7 +154,7 @@ const SystemLogs = () => {
               Loading system logs...
             </div>
           ) : (
-            <table className="w-full text-left border-collapse">
+            <table id="export-table" className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100">
                   <th className="p-4 font-semibold text-gray-600 text-sm">Date & Time</th>

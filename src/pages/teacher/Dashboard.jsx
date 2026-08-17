@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Users, BookOpen, Clock, Bell, FileText } from 'lucide-react';
 import ProfileHeaderCard from '../../components/ProfileHeaderCard';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     classes: 0,
     students: 0,
@@ -13,6 +15,7 @@ const Dashboard = () => {
   const [recentNotices, setRecentNotices] = useState([]);
   const [assignedClassesText, setAssignedClassesText] = useState('Not Assigned');
   const [assignedSubjectsText, setAssignedSubjectsText] = useState('Not Assigned');
+  const [upcomingClass, setUpcomingClass] = useState(null);
   
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
 
@@ -75,6 +78,50 @@ const Dashboard = () => {
     });
     
     setRecentNotices(allNotices.slice(0, 5));
+
+    // 5. Calculate Upcoming Class dynamically from School Admin Timetable
+    const savedTimetable = JSON.parse(localStorage.getItem('schoolAdminTimetable') || '{}');
+    const todayDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+    const periodTimes = {
+      '1': '08:00 AM – 08:40 AM',
+      '2': '08:40 AM – 09:20 AM',
+      '3': '09:20 AM – 10:00 AM',
+      '4': '10:00 AM – 10:40 AM',
+      '5': '11:00 AM – 11:40 AM',
+      '6': '11:40 AM – 12:20 PM',
+      '7': '12:20 PM – 01:00 PM'
+    };
+
+    let nextClass = null;
+    Object.keys(savedTimetable).forEach(classId => {
+      const classTimetable = savedTimetable[classId];
+      if (classTimetable && classTimetable[todayDay]) {
+        const daySlots = classTimetable[todayDay];
+        Object.keys(daySlots).forEach(periodKey => {
+          const entry = daySlots[periodKey];
+          if (entry && typeof entry === 'object' && entry.teacherId?.toString() === authUser.id?.toString()) {
+            const cls = classesList.find(c => c.id?.toString() === classId.toString());
+            const sub = subjectsList.find(s => s.id?.toString() === entry.subjectId?.toString());
+            const className = cls ? `${cls.className}-${cls.section}` : `Class ${classId}`;
+            const subjectName = sub ? sub.subjectName : 'Subject';
+            const timeStr = periodTimes[periodKey] || `Period ${periodKey}`;
+            const roomStr = entry.room || (cls ? `Room ${cls.className}` : '');
+
+            if (!nextClass) {
+              nextClass = {
+                className,
+                subject: subjectName,
+                time: timeStr,
+                room: roomStr,
+                period: periodKey
+              };
+            }
+          }
+        });
+      }
+    });
+
+    setUpcomingClass(nextClass);
   }, [authUser.id]);
 
   const statCards = [
@@ -150,12 +197,32 @@ const Dashboard = () => {
         </div>
 
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800/80 shadow-sm p-6 flex flex-col items-center justify-center text-center min-h-[300px]">
-          <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center text-blue-600 dark:text-blue-400 mb-5 shadow-sm">
+          <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center text-blue-600 dark:text-blue-400 mb-4 shadow-sm">
             <Clock size={32} />
           </div>
           <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider mb-2">Upcoming Class</h3>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mb-6 leading-relaxed max-w-xs">Your next assigned class slot is Grade 10 - Mathematics.</p>
-          <button className="text-darkBlue hover:text-blue-900 font-bold transition-all text-sm uppercase tracking-wider">View Timetable &rarr;</button>
+          
+          {upcomingClass ? (
+            <div className="space-y-1.5 mb-5">
+              <p className="text-lg font-black text-slate-800 dark:text-slate-100">{upcomingClass.className}</p>
+              <p className="text-sm font-bold text-greenAccent">{upcomingClass.subject}</p>
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-450">{upcomingClass.time}</p>
+              {upcomingClass.room && (
+                <span className="inline-block text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2.5 py-0.5 rounded-full mt-1">
+                  {upcomingClass.room}
+                </span>
+              )}
+            </div>
+          ) : (
+            <p className="text-slate-400 dark:text-slate-500 text-sm font-medium mb-5">No Upcoming Class</p>
+          )}
+
+          <button 
+            onClick={() => navigate('/teacher/timetable')}
+            className="text-darkBlue hover:text-blue-900 font-bold transition-all text-xs uppercase tracking-wider"
+          >
+            View Timetable &rarr;
+          </button>
         </div>
       </div>
     </div>

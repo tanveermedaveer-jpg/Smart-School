@@ -13,25 +13,65 @@ const Timetable = () => {
   const [teacherAssignments, setTeacherAssignments] = useState([]);
   const [teachers, setTeachers] = useState([]);
 
+  const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
+  const schoolId = authUser.schoolId || 'global';
+
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
   const periods = ['1', '2', '3', '4', 'Break', '5', '6', '7'];
 
   useEffect(() => {
-    const savedClasses = JSON.parse(localStorage.getItem('schoolAdminClasses') || '[]');
-    setClasses(savedClasses);
+    const loadData = async () => {
+      let savedClasses = JSON.parse(localStorage.getItem('schoolAdminClasses') || '[]');
+      let savedSubjects = JSON.parse(localStorage.getItem('schoolAdminSubjects') || '[]');
+      let savedAssignments = JSON.parse(localStorage.getItem('schoolAdminTeacherAssignments') || '[]');
+      let savedUsers = JSON.parse(localStorage.getItem('schoolAdminUsers') || '[]');
+      let savedTimetable = JSON.parse(localStorage.getItem('schoolAdminTimetable') || '{}');
 
-    const savedSubjects = JSON.parse(localStorage.getItem('schoolAdminSubjects') || '[]');
-    setSubjects(savedSubjects);
+      if (schoolId) {
+        try {
+          const { getCollection } = await import('../../utils/db');
+          const [remoteTt, remoteCls, remoteSub, remoteAssign, remoteUsers] = await Promise.all([
+            getCollection('schoolAdminTimetable', schoolId),
+            getCollection('schoolAdminClasses', schoolId),
+            getCollection('schoolAdminSubjects', schoolId),
+            getCollection('schoolAdminTeacherAssignments', schoolId),
+            getCollection('schoolAdminUsers', schoolId)
+          ]);
 
-    const savedTimetable = JSON.parse(localStorage.getItem('schoolAdminTimetable') || '{}');
-    setTimetableData(savedTimetable);
+          if (remoteTt && typeof remoteTt === 'object' && Object.keys(remoteTt).length > 0) {
+            savedTimetable = remoteTt;
+            localStorage.setItem('schoolAdminTimetable', JSON.stringify(remoteTt));
+          }
+          if (remoteCls && Array.isArray(remoteCls) && remoteCls.length > 0) {
+            savedClasses = remoteCls;
+            localStorage.setItem('schoolAdminClasses', JSON.stringify(remoteCls));
+          }
+          if (remoteSub && Array.isArray(remoteSub) && remoteSub.length > 0) {
+            savedSubjects = remoteSub;
+            localStorage.setItem('schoolAdminSubjects', JSON.stringify(remoteSub));
+          }
+          if (remoteAssign && Array.isArray(remoteAssign) && remoteAssign.length > 0) {
+            savedAssignments = remoteAssign;
+            localStorage.setItem('schoolAdminTeacherAssignments', JSON.stringify(remoteAssign));
+          }
+          if (remoteUsers && Array.isArray(remoteUsers) && remoteUsers.length > 0) {
+            savedUsers = remoteUsers;
+            localStorage.setItem('schoolAdminUsers', JSON.stringify(remoteUsers));
+          }
+        } catch (e) {
+          console.warn('Error fetching timetable background data:', e);
+        }
+      }
 
-    const savedAssignments = JSON.parse(localStorage.getItem('schoolAdminTeacherAssignments') || '[]');
-    setTeacherAssignments(savedAssignments);
+      setClasses(savedClasses);
+      setSubjects(savedSubjects);
+      setTeacherAssignments(savedAssignments);
+      setTeachers(savedUsers.filter(u => u.role?.toLowerCase() === 'teacher'));
+      setTimetableData(savedTimetable);
+    };
 
-    const savedUsers = JSON.parse(localStorage.getItem('schoolAdminUsers') || '[]');
-    setTeachers(savedUsers.filter(u => u.role === 'teacher' || u.role === 'Teacher'));
-  }, []);
+    loadData();
+  }, [schoolId]);
 
   const handleCellChange = (day, period, val) => {
     if (!selectedClass) return;
@@ -64,12 +104,18 @@ const Timetable = () => {
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!selectedClass) {
       toast.error('Please select a class first');
       return;
     }
     localStorage.setItem('schoolAdminTimetable', JSON.stringify(timetableData));
+    try {
+      const { saveCollection } = await import('../../utils/db');
+      await saveCollection('schoolAdminTimetable', schoolId, timetableData);
+    } catch (e) {
+      console.warn('Error saving timetable to backend database:', e);
+    }
     toast.success('Timetable saved successfully');
   };
 

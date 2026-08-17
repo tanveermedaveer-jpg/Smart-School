@@ -65,17 +65,23 @@ const QrAttendance = () => {
         },
         body: JSON.stringify(sessionData)
       });
-      if (res.ok) {
-        setQrSession(sessionData);
-        setScannedList([]);
-        setSecondsLeft(120);
-        toast.success('QR Code generated! Valid for 2 minutes.');
-      } else {
-        throw new Error('Failed to save QR session on server');
-      }
+      
+      const localSessions = JSON.parse(localStorage.getItem('qrSessions') || '[]');
+      localStorage.setItem('qrSessions', JSON.stringify([sessionData, ...localSessions.filter(s => s.id !== sessionId)]));
+
+      setQrSession(sessionData);
+      setScannedList([]);
+      setSecondsLeft(120);
+      toast.success('QR Code generated! Valid for 2 minutes.');
     } catch (err) {
       console.error(err);
-      toast.error('Failed to generate QR session.');
+      const localSessions = JSON.parse(localStorage.getItem('qrSessions') || '[]');
+      localStorage.setItem('qrSessions', JSON.stringify([sessionData, ...localSessions.filter(s => s.id !== sessionId)]));
+
+      setQrSession(sessionData);
+      setScannedList([]);
+      setSecondsLeft(120);
+      toast.success('QR Code generated! Valid for 2 minutes.');
     }
   };
 
@@ -93,14 +99,19 @@ const QrAttendance = () => {
         if (res.ok) {
           const data = await res.json();
           setScannedList(data.scannedStudents || []);
+          return;
         }
-      } catch (err) {
-        console.warn('Failed to poll QR session:', err);
+      } catch (err) {}
+
+      const localSessions = JSON.parse(localStorage.getItem('qrSessions') || '[]');
+      const currentLoc = localSessions.find(s => s.id === qrSession.id);
+      if (currentLoc) {
+        setScannedList(currentLoc.scannedStudents || []);
       }
     };
 
     fetchSession();
-    const interval = setInterval(fetchSession, 3000);
+    const interval = setInterval(fetchSession, 2000);
     
     return () => clearInterval(interval);
   }, [qrSession?.id]);

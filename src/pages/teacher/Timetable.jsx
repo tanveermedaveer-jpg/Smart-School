@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar } from 'lucide-react';
+import ExportButtons from '../../components/ExportButtons';
 
 const Timetable = () => {
   const [timetable, setTimetable] = useState({});
@@ -8,50 +9,109 @@ const Timetable = () => {
   const [teachers, setTeachers] = useState([]);
   
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
+  const schoolId = authUser.schoolId || 'global';
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
   const periods = [1, 2, 3, 4, 5, 6, 7];
 
   useEffect(() => {
-    const savedTimetable = JSON.parse(localStorage.getItem('schoolAdminTimetable') || '{}');
-    const savedClasses = JSON.parse(localStorage.getItem('schoolAdminClasses') || '[]');
-    const savedSubjects = JSON.parse(localStorage.getItem('schoolAdminSubjects') || '[]');
-    const savedUsers = JSON.parse(localStorage.getItem('schoolAdminUsers') || '[]');
+    const loadAll = async () => {
+      let savedTimetable = {};
+      let savedClasses = [];
+      let savedSubjects = [];
+      let savedUsers = [];
 
-    setClasses(savedClasses);
-    setSubjects(savedSubjects);
-    setTeachers(savedUsers.filter(u => u.role === 'teacher' || u.role === 'Teacher'));
+      if (schoolId) {
+        try {
+          const { getCollection } = await import('../../utils/db');
+          const [remoteTt, remoteCls, remoteSub, remoteUsers] = await Promise.all([
+            getCollection('schoolAdminTimetable', schoolId),
+            getCollection('schoolAdminClasses', schoolId),
+            getCollection('schoolAdminSubjects', schoolId),
+            getCollection('schoolAdminUsers', schoolId)
+          ]);
 
-    // Filter timetable for this teacher
-    const myTimetable = {};
-    Object.keys(savedTimetable).forEach(classId => {
-      const classTimetable = savedTimetable[classId];
-      if (classTimetable && typeof classTimetable === 'object') {
-        Object.keys(classTimetable).forEach(day => {
-          const dayTimetable = classTimetable[day];
-          if (dayTimetable && typeof dayTimetable === 'object') {
-            Object.keys(dayTimetable).forEach(period => {
-              const entry = dayTimetable[period];
-              if (entry && typeof entry === 'object' && entry.teacherId?.toString() === authUser.id?.toString()) {
-                if (!myTimetable[day]) myTimetable[day] = {};
-                myTimetable[day][period] = { classId, subjectId: entry.subjectId };
-              }
-            });
+          if (remoteTt && typeof remoteTt === 'object' && Object.keys(remoteTt).length > 0) {
+            savedTimetable = remoteTt;
+            localStorage.setItem('schoolAdminTimetable', JSON.stringify(remoteTt));
+          } else {
+            savedTimetable = JSON.parse(localStorage.getItem('schoolAdminTimetable') || '{}');
           }
-        });
-      }
-    });
 
-    setTimetable(myTimetable);
-  }, [authUser.id]);
+          if (remoteCls && Array.isArray(remoteCls) && remoteCls.length > 0) {
+            savedClasses = remoteCls;
+            localStorage.setItem('schoolAdminClasses', JSON.stringify(remoteCls));
+          } else {
+            savedClasses = JSON.parse(localStorage.getItem('schoolAdminClasses') || '[]');
+          }
+
+          if (remoteSub && Array.isArray(remoteSub) && remoteSub.length > 0) {
+            savedSubjects = remoteSub;
+            localStorage.setItem('schoolAdminSubjects', JSON.stringify(remoteSub));
+          } else {
+            savedSubjects = JSON.parse(localStorage.getItem('schoolAdminSubjects') || '[]');
+          }
+
+          if (remoteUsers && Array.isArray(remoteUsers) && remoteUsers.length > 0) {
+            savedUsers = remoteUsers;
+            localStorage.setItem('schoolAdminUsers', JSON.stringify(remoteUsers));
+          } else {
+            savedUsers = JSON.parse(localStorage.getItem('schoolAdminUsers') || '[]');
+          }
+        } catch (e) {
+          savedTimetable = JSON.parse(localStorage.getItem('schoolAdminTimetable') || '{}');
+          savedClasses = JSON.parse(localStorage.getItem('schoolAdminClasses') || '[]');
+          savedSubjects = JSON.parse(localStorage.getItem('schoolAdminSubjects') || '[]');
+          savedUsers = JSON.parse(localStorage.getItem('schoolAdminUsers') || '[]');
+        }
+      } else {
+        savedTimetable = JSON.parse(localStorage.getItem('schoolAdminTimetable') || '{}');
+        savedClasses = JSON.parse(localStorage.getItem('schoolAdminClasses') || '[]');
+        savedSubjects = JSON.parse(localStorage.getItem('schoolAdminSubjects') || '[]');
+        savedUsers = JSON.parse(localStorage.getItem('schoolAdminUsers') || '[]');
+      }
+
+      setClasses(savedClasses);
+      setSubjects(savedSubjects);
+      setTeachers(savedUsers.filter(u => u.role?.toLowerCase() === 'teacher'));
+
+      // Filter timetable strictly for logged-in teacher
+      const myTimetable = {};
+      Object.keys(savedTimetable).forEach(classId => {
+        const classTimetable = savedTimetable[classId];
+        if (classTimetable && typeof classTimetable === 'object') {
+          Object.keys(classTimetable).forEach(day => {
+            const dayTimetable = classTimetable[day];
+            if (dayTimetable && typeof dayTimetable === 'object') {
+              Object.keys(dayTimetable).forEach(period => {
+                const entry = dayTimetable[period];
+                if (entry && typeof entry === 'object' && entry.teacherId?.toString() === authUser.id?.toString()) {
+                  if (!myTimetable[day]) myTimetable[day] = {};
+                  myTimetable[day][period] = { 
+                    classId, 
+                    subjectId: entry.subjectId,
+                    room: entry.room || ''
+                  };
+                }
+              });
+            }
+          });
+        }
+      });
+
+      setTimetable(myTimetable);
+    };
+
+    loadAll();
+  }, [authUser.id, schoolId]);
 
   const getSubjectName = (id) => {
     const sub = subjects.find(s => s.id.toString() === id?.toString());
-    return sub ? sub.subjectName : 'Free Period';
+    return sub ? sub.subjectName : 'Subject';
   };
 
   const getClassName = (id) => {
     const cls = classes.find(c => c.id.toString() === id?.toString());
-    return cls ? `${cls.className}-${cls.section}` : '';
+    return cls ? `${cls.className}-${cls.section}` : `Class ${id}`;
   };
 
   const isTimetableConfigured = Object.keys(timetable).length > 0;
@@ -61,8 +121,11 @@ const Timetable = () => {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">My Timetable</h2>
-          <p className="text-gray-500 text-sm mt-1">View your weekly teaching schedule.</p>
+          <p className="text-gray-500 text-sm mt-1">View your assigned weekly teaching schedule.</p>
         </div>
+        {isTimetableConfigured && (
+          <ExportButtons tableId="export-table" filename={`My_Timetable_${authUser.name || 'Teacher'}`} />
+        )}
       </div>
 
       {!isTimetableConfigured ? (
@@ -74,7 +137,7 @@ const Timetable = () => {
       ) : (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[800px]">
+            <table id="export-table" className="w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="bg-darkBlue text-white text-sm">
                   <th className="p-4 font-semibold border-r border-blue-800 w-32">Day / Period</th>
