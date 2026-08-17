@@ -54,15 +54,40 @@ const MySalary = () => {
         u.id?.toString() === teacherId.toString() && 
         (!u.schoolId || u.schoolId.toString() === schoolId.toString())
       );
-      if (teacherProfile) {
-        setDefaultSalary(parseFloat(teacherProfile.monthlySalary || teacherProfile.salary) || 0);
-      }
+      const defSalary = teacherProfile ? (parseFloat(teacherProfile.monthlySalary || teacherProfile.salary) || 0) : 0;
+      setDefaultSalary(defSalary);
 
-      // Filter salaries strictly by schoolId AND teacherId
+      // Filter salaries strictly by schoolId AND teacherId (never by teacherName or email)
       const mySalaries = savedSalaries.filter(s => 
         s.teacherId?.toString() === teacherId.toString() &&
         (!s.schoolId || s.schoolId.toString() === schoolId.toString())
       );
+
+      // Check if current month entry exists; if not and defSalary > 0, include synthesized current month record
+      const now = new Date();
+      const currentMonth = now.toLocaleString('default', { month: 'long' });
+      const currentYear = now.getFullYear();
+
+      const hasCurrentMonth = mySalaries.some(s => 
+        s.month === currentMonth && parseInt(s.year) === currentYear
+      );
+
+      if (!hasCurrentMonth && defSalary > 0) {
+        mySalaries.push({
+          id: `sal-current-${teacherId}-${currentMonth}-${currentYear}`,
+          teacherId: teacherId,
+          schoolId: schoolId,
+          month: currentMonth,
+          year: currentYear,
+          monthlySalary: defSalary,
+          paidAmount: 0,
+          remainingAmount: defSalary,
+          status: 'Pending',
+          paymentDate: '—',
+          paymentMethod: '—',
+          paymentHistory: []
+        });
+      }
 
       // Sort by newest year & month
       mySalaries.sort((a, b) => {
