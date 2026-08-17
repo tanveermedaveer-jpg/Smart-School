@@ -31,26 +31,64 @@ const FeeStructure = () => {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [schoolId]);
 
-  const loadData = () => {
-    const savedStructures = JSON.parse(localStorage.getItem('schoolAdminFeeStructures') || '[]');
+  const loadData = async () => {
+    let savedStructures = [];
+    let savedClasses = [];
+
+    if (schoolId) {
+      try {
+        const { getCollection } = await import('../../utils/db');
+        const [remoteStructures, remoteClasses] = await Promise.all([
+          getCollection('schoolAdminFeeStructures', schoolId),
+          getCollection('schoolAdminClasses', schoolId)
+        ]);
+
+        if (remoteStructures && Array.isArray(remoteStructures) && remoteStructures.length > 0) {
+          savedStructures = remoteStructures;
+          localStorage.setItem('schoolAdminFeeStructures', JSON.stringify(remoteStructures));
+        } else {
+          savedStructures = JSON.parse(localStorage.getItem('schoolAdminFeeStructures') || '[]');
+        }
+
+        if (remoteClasses && Array.isArray(remoteClasses) && remoteClasses.length > 0) {
+          savedClasses = remoteClasses;
+          localStorage.setItem('schoolAdminClasses', JSON.stringify(remoteClasses));
+        } else {
+          savedClasses = JSON.parse(localStorage.getItem('schoolAdminClasses') || '[]');
+        }
+      } catch (e) {
+        savedStructures = JSON.parse(localStorage.getItem('schoolAdminFeeStructures') || '[]');
+        savedClasses = JSON.parse(localStorage.getItem('schoolAdminClasses') || '[]');
+      }
+    } else {
+      savedStructures = JSON.parse(localStorage.getItem('schoolAdminFeeStructures') || '[]');
+      savedClasses = JSON.parse(localStorage.getItem('schoolAdminClasses') || '[]');
+    }
+
     setFeeStructures(savedStructures);
-
-    const savedClasses = JSON.parse(localStorage.getItem('schoolAdminClasses') || '[]');
     setClasses(savedClasses);
   };
 
-  const saveToLocal = (updatedStructures) => {
+  const saveToLocal = async (updatedStructures) => {
     setFeeStructures(updatedStructures);
     localStorage.setItem('schoolAdminFeeStructures', JSON.stringify(updatedStructures));
+    try {
+      const { saveCollection } = await import('../../utils/db');
+      await saveCollection('schoolAdminFeeStructures', schoolId, updatedStructures);
+      const { generateMonthlyFees } = await import('../../utils/feeGenerator');
+      await generateMonthlyFees(schoolId);
+    } catch (e) {
+      console.warn('Error syncing fee structures with backend database:', e);
+    }
   };
 
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Validation
@@ -86,12 +124,12 @@ const FeeStructure = () => {
 
     if (editingId) {
       const updated = feeStructures.map(fs => fs.id === editingId ? { ...payload, id: editingId } : fs);
-      saveToLocal(updated);
-      toast.success('Fee structure updated successfully');
+      await saveToLocal(updated);
+      toast.success('Fee structure updated successfully and student fee records generated');
     } else {
       const newStructure = { ...payload, id: Date.now() };
-      saveToLocal([...feeStructures, newStructure]);
-      toast.success('Fee structure created successfully');
+      await saveToLocal([...feeStructures, newStructure]);
+      toast.success('Fee structure created successfully and student fee records generated');
     }
     closeModal();
   };

@@ -8,20 +8,57 @@ const StudentFeeStatus = () => {
   const [filterMonth, setFilterMonth] = useState('All');
   const [filterStatus, setFilterStatus] = useState('All');
 
+  const schoolId = authUser.schoolId || 'global';
+
   useEffect(() => {
-    const studentId = authUser.studentId || authUser.id;
-    if (studentId) {
-      const allFees = JSON.parse(localStorage.getItem('schoolAdminMonthlyFees') || '[]');
-      const myFees = allFees.filter(f => f.studentId?.toString() === studentId.toString());
-      
+    const loadStudentFees = async () => {
+      const studentId = authUser.studentId || authUser.id;
+      if (!studentId) return;
+
+      let allFees = [];
+
+      if (schoolId) {
+        try {
+          const { getCollection } = await import('../../utils/db');
+          const remoteFees = await getCollection('schoolAdminMonthlyFees', schoolId);
+          if (remoteFees && Array.isArray(remoteFees) && remoteFees.length > 0) {
+            allFees = remoteFees;
+            localStorage.setItem('schoolAdminMonthlyFees', JSON.stringify(remoteFees));
+          } else {
+            allFees = JSON.parse(localStorage.getItem('schoolAdminMonthlyFees') || '[]');
+          }
+        } catch (e) {
+          allFees = JSON.parse(localStorage.getItem('schoolAdminMonthlyFees') || '[]');
+        }
+      } else {
+        allFees = JSON.parse(localStorage.getItem('schoolAdminMonthlyFees') || '[]');
+      }
+
+      let myFees = allFees.filter(f => f.studentId?.toString() === studentId.toString());
+
+      // If no fee record is found for this student yet, trigger on-the-fly generation
+      if (myFees.length === 0 && schoolId) {
+        try {
+          const { generateMonthlyFees } = await import('../../utils/feeGenerator');
+          await generateMonthlyFees(schoolId, studentId);
+          allFees = JSON.parse(localStorage.getItem('schoolAdminMonthlyFees') || '[]');
+          myFees = allFees.filter(f => f.studentId?.toString() === studentId.toString());
+        } catch (e) {
+          console.warn('Error generating student fee on mount:', e);
+        }
+      }
+
       myFees.sort((a, b) => {
         const dateA = new Date(`${a.month} 1, ${a.year}`);
         const dateB = new Date(`${b.month} 1, ${b.year}`);
-        return dateB - dateA; // Newest first
+        return dateB - dateA;
       });
+
       setFees(myFees);
-    }
-  }, [authUser.id, authUser.studentId]);
+    };
+
+    loadStudentFees();
+  }, [authUser.id, authUser.studentId, schoolId]);
 
   const availableMonths = [...new Set(fees.map(f => f.month))];
 
