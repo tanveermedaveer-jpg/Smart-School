@@ -6,29 +6,84 @@ import { BASE_URL } from '../../utils/db';
 
 const QrAttendance = () => {
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
+  const schoolId = authUser.schoolId || 'global';
   
-  // Load classes/subjects assigned to this teacher
-  const assignments = JSON.parse(localStorage.getItem('schoolAdminTeacherAssignments') || '[]');
-  const myAssignments = assignments.filter(a => a.teacherId?.toString() === authUser.id?.toString());
-  
-  const classesList = JSON.parse(localStorage.getItem('schoolAdminClasses') || '[]');
-  const subjectsList = JSON.parse(localStorage.getItem('schoolAdminSubjects') || '[]');
-
-  const assignedOptions = myAssignments.map(a => {
-    const cls = classesList.find(c => c.id.toString() === a.classId?.toString());
-    const sub = subjectsList.find(s => s.id.toString() === a.subjectId?.toString());
-    return {
-      assignmentId: a.id,
-      classId: a.classId,
-      subjectId: a.subjectId,
-      label: cls ? `${cls.className} - ${cls.section} (${sub?.subjectName || 'General'})` : 'Unknown'
-    };
-  }).filter(o => o.label !== 'Unknown');
-
+  const [assignedOptions, setAssignedOptions] = useState([]);
   const [selectedOptionId, setSelectedOptionId] = useState('');
   const [qrSession, setQrSession] = useState(null);
   const [scannedList, setScannedList] = useState([]);
   const [secondsLeft, setSecondsLeft] = useState(0);
+
+  useEffect(() => {
+    const loadAssignments = async () => {
+      let assignments = JSON.parse(localStorage.getItem('schoolAdminTeacherAssignments') || '[]');
+      let classesList = JSON.parse(localStorage.getItem('schoolAdminClasses') || '[]');
+      let subjectsList = JSON.parse(localStorage.getItem('schoolAdminSubjects') || '[]');
+
+      if (schoolId) {
+        try {
+          const { getCollection } = await import('../../utils/db');
+          const [remoteAssign, remoteCls, remoteSub] = await Promise.all([
+            getCollection('schoolAdminTeacherAssignments', schoolId),
+            getCollection('schoolAdminClasses', schoolId),
+            getCollection('schoolAdminSubjects', schoolId)
+          ]);
+          if (remoteAssign && Array.isArray(remoteAssign) && remoteAssign.length > 0) {
+            assignments = remoteAssign;
+            localStorage.setItem('schoolAdminTeacherAssignments', JSON.stringify(remoteAssign));
+          }
+          if (remoteCls && Array.isArray(remoteCls) && remoteCls.length > 0) {
+            classesList = remoteCls;
+            localStorage.setItem('schoolAdminClasses', JSON.stringify(remoteCls));
+          }
+          if (remoteSub && Array.isArray(remoteSub) && remoteSub.length > 0) {
+            subjectsList = remoteSub;
+            localStorage.setItem('schoolAdminSubjects', JSON.stringify(remoteSub));
+          }
+        } catch (e) {}
+      }
+
+      const myAssignments = assignments.filter(a => a.teacherId?.toString() === authUser.id?.toString());
+      
+      let options = myAssignments.map(a => {
+        const cls = classesList.find(c => c.id?.toString() === a.classId?.toString());
+        const sub = subjectsList.find(s => s.id?.toString() === a.subjectId?.toString());
+        return {
+          assignmentId: (a.id || `assign-${a.classId}-${a.subjectId}`).toString(),
+          classId: a.classId,
+          subjectId: a.subjectId,
+          label: cls ? `${cls.className} - ${cls.section} (${sub?.subjectName || 'General'})` : 'Assigned Class'
+        };
+      });
+
+      // Fallback: If no explicit teacher assignment record exists yet, build options from all classes/subjects in teacher's school
+      if (options.length === 0 && classesList.length > 0) {
+        classesList.forEach(cls => {
+          if (subjectsList.length > 0) {
+            subjectsList.forEach(sub => {
+              options.push({
+                assignmentId: `fallback-${cls.id}-${sub.id}`,
+                classId: cls.id,
+                subjectId: sub.id,
+                label: `${cls.className} - ${cls.section} (${sub.subjectName})`
+              });
+            });
+          } else {
+            options.push({
+              assignmentId: `fallback-${cls.id}-gen`,
+              classId: cls.id,
+              subjectId: 'general',
+              label: `${cls.className} - ${cls.section} (General)`
+            });
+          }
+        });
+      }
+
+      setAssignedOptions(options);
+    };
+
+    loadAssignments();
+  }, [authUser.id, schoolId]);
 
   const handleGenerateQR = async () => {
     if (!selectedOptionId) {

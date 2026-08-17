@@ -78,18 +78,16 @@ const Timetable = () => {
     
     let entry = null;
     if (val) {
-      const assignment = teacherAssignments.find(a => 
-        a.classId?.toString() === selectedClass.toString() && 
-        a.subjectId?.toString() === val.toString()
-      );
-      if (assignment) {
-        entry = {
-          subjectId: assignment.subjectId,
-          teacherId: assignment.teacherId,
-          classId: selectedClass,
-          room: `Room ${selectedClass}`
-        };
-      }
+      const parts = val.split('___');
+      const subjectId = parts[0] || '';
+      const teacherId = parts[1] || '';
+      const cls = classes.find(c => c.id?.toString() === selectedClass.toString());
+      entry = {
+        subjectId: subjectId,
+        teacherId: teacherId,
+        classId: selectedClass,
+        room: cls ? `Room ${cls.className}` : `Room ${selectedClass}`
+      };
     }
     
     setTimetableData(prev => ({
@@ -121,6 +119,8 @@ const Timetable = () => {
 
   const currentClassTimetable = timetableData[selectedClass] || {};
 
+  const assignedForSelectedClass = teacherAssignments.filter(a => a.classId?.toString() === selectedClass.toString());
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -142,7 +142,7 @@ const Timetable = () => {
         <select 
           value={selectedClass}
           onChange={(e) => setSelectedClass(e.target.value)}
-          className="w-full md:w-1/3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-greenAccent focus:border-greenAccent outline-none bg-white"
+          className="w-full md:w-1/3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-greenAccent focus:border-greenAccent outline-none bg-white text-sm"
         >
           <option value="">-- Select a Class --</option>
           {classes.map(c => (
@@ -172,34 +172,55 @@ const Timetable = () => {
                       <Calendar size={16} className="text-gray-400 mr-2" />
                       {day}
                     </td>
-                    {periods.map(period => (
-                      <td key={period} className="p-2 border-r border-gray-100 bg-white">
-                        {period === 'Break' ? (
-                          <div className="h-full w-full flex items-center justify-center text-gray-400 font-medium bg-gray-50 rounded py-2">
-                            Break
-                          </div>
-                        ) : (
-                          <select
-                            value={currentClassTimetable[day]?.[period]?.subjectId || currentClassTimetable[day]?.[period] || ''}
-                            onChange={(e) => handleCellChange(day, period, e.target.value)}
-                            className="w-full p-2 border border-gray-200 rounded focus:ring-1 focus:ring-greenAccent outline-none text-xs"
-                          >
-                            <option value="">- Free -</option>
-                            {teacherAssignments
-                              .filter(a => a.classId?.toString() === selectedClass.toString())
-                              .map(a => {
-                                const subject = subjects.find(s => s.id?.toString() === a.subjectId?.toString());
-                                const teacher = teachers.find(t => t.id?.toString() === a.teacherId?.toString());
-                                return (
-                                  <option key={`${a.id}`} value={a.subjectId}>
-                                    {subject ? subject.subjectName : 'Unknown'} ({teacher ? teacher.name : 'Unknown'})
-                                  </option>
-                                );
-                            })}
-                          </select>
-                        )}
-                      </td>
-                    ))}
+                    {periods.map(period => {
+                      const currentEntry = currentClassTimetable[day]?.[period];
+                      const currentValue = currentEntry
+                        ? `${currentEntry.subjectId || ''}___${currentEntry.teacherId || ''}`
+                        : '';
+                      return (
+                        <td key={period} className="p-2 border-r border-gray-100 bg-white">
+                          {period === 'Break' ? (
+                            <div className="h-full w-full flex items-center justify-center text-gray-400 font-medium bg-gray-50 rounded py-2">
+                              Break
+                            </div>
+                          ) : (
+                            <select
+                              value={currentValue}
+                              onChange={(e) => handleCellChange(day, period, e.target.value)}
+                              className="w-full p-2 border border-gray-200 rounded focus:ring-1 focus:ring-greenAccent outline-none text-xs"
+                            >
+                              <option value="">- Free -</option>
+                              {assignedForSelectedClass.length > 0 ? (
+                                assignedForSelectedClass.map(a => {
+                                  const subject = subjects.find(s => s.id?.toString() === a.subjectId?.toString());
+                                  const teacher = teachers.find(t => t.id?.toString() === a.teacherId?.toString());
+                                  return (
+                                    <option key={`${a.id}`} value={`${a.subjectId}___${a.teacherId}`}>
+                                      {subject ? subject.subjectName : 'Subject'} ({teacher ? teacher.name : 'Teacher'})
+                                    </option>
+                                  );
+                                })
+                              ) : (
+                                subjects.map(s => {
+                                  if (teachers.length > 0) {
+                                    return teachers.map(t => (
+                                      <option key={`${s.id}-${t.id}`} value={`${s.id}___${t.id}`}>
+                                        {s.subjectName} ({t.name})
+                                      </option>
+                                    ));
+                                  }
+                                  return (
+                                    <option key={s.id} value={`${s.id}___`}>
+                                      {s.subjectName}
+                                    </option>
+                                  );
+                                })
+                              )}
+                            </select>
+                          )}
+                        </td>
+                      );
+                    })}
                   </tr>
                 ))}
               </tbody>

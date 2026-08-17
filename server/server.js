@@ -623,6 +623,7 @@ app.delete('/api/admissions/:id', authenticateToken, async (req, res) => {
 
 app.get('/api/qr-sessions/:sessionId', authenticateToken, (req, res) => {
   const db = dbManager.readDb();
+  if (!Array.isArray(db.qrSessions)) db.qrSessions = [];
   const session = db.qrSessions.find(s => s.id === req.params.sessionId);
   if (!session) return res.status(404).json({ message: 'Session not found' });
   res.json(session);
@@ -630,21 +631,28 @@ app.get('/api/qr-sessions/:sessionId', authenticateToken, (req, res) => {
 
 app.post('/api/qr-sessions', authenticateToken, async (req, res) => {
   const db = dbManager.readDb();
+  if (!Array.isArray(db.qrSessions)) db.qrSessions = [];
   const newSession = { ...req.body };
-  db.qrSessions.push(newSession);
+  const existingIdx = db.qrSessions.findIndex(s => s.id === newSession.id);
+  if (existingIdx !== -1) {
+    db.qrSessions[existingIdx] = newSession;
+  } else {
+    db.qrSessions.push(newSession);
+  }
   await dbManager.writeDb(db);
   res.status(201).json(newSession);
 });
 
 app.post('/api/qr-sessions/:sessionId/scan', authenticateToken, async (req, res) => {
   const db = dbManager.readDb();
+  if (!Array.isArray(db.qrSessions)) db.qrSessions = [];
   const idx = db.qrSessions.findIndex(s => s.id === req.params.sessionId);
   if (idx === -1) return res.status(404).json({ message: 'Session not found' });
 
   const session = db.qrSessions[idx];
   const { studentId, studentName } = req.body;
   
-  const alreadyScanned = (session.scannedStudents || []).some(s => s.studentId === studentId);
+  const alreadyScanned = (session.scannedStudents || []).some(s => s.studentId?.toString() === studentId?.toString());
   if (alreadyScanned) {
     return res.status(400).json({ message: 'Already scanned' });
   }
