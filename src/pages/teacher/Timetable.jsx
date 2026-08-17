@@ -102,7 +102,9 @@ const Timetable = () => {
       }
 
       // Filter timetable strictly for logged-in teacher and current schoolId
+      const teacherIdStr = (authUser.teacherId || authUser.id)?.toString();
       const myTimetable = {};
+
       Object.keys(timetableDict).forEach(classId => {
         const classTimetable = timetableDict[classId];
         if (classTimetable && typeof classTimetable === 'object') {
@@ -115,15 +117,15 @@ const Timetable = () => {
                   const entrySchoolId = entry.schoolId || schoolId;
                   const isSameSchool = !entrySchoolId || entrySchoolId.toString() === schoolId.toString();
                   
-                  let isAssignedToMe = entry.teacherId?.toString() === authUser.id?.toString();
+                  let isAssignedToMe = entry.teacherId?.toString() === teacherIdStr;
 
-                  // Fallback: cross-check with saved assignments if teacherId was not recorded in entry
+                  // Fallback: cross-check with saved assignments if teacherId was omitted
                   if (!isAssignedToMe && savedAssignments.length > 0) {
                     const assignMatch = savedAssignments.find(a => 
                       a.classId?.toString() === classId.toString() && 
                       a.subjectId?.toString() === entry.subjectId?.toString()
                     );
-                    if (assignMatch && assignMatch.teacherId?.toString() === authUser.id?.toString()) {
+                    if (assignMatch && assignMatch.teacherId?.toString() === teacherIdStr) {
                       isAssignedToMe = true;
                     }
                   }
@@ -133,7 +135,7 @@ const Timetable = () => {
                     const cls = savedClasses.find(c => c.id?.toString() === classId.toString());
                     const sub = savedSubjects.find(s => s.id?.toString() === entry.subjectId?.toString());
 
-                    myTimetable[day][period] = { 
+                    const periodObj = { 
                       ...entry,
                       classId, 
                       className: entry.className || (cls ? `${cls.className}-${cls.section}` : `Class ${classId}`),
@@ -143,6 +145,14 @@ const Timetable = () => {
                       endTime: entry.endTime || '',
                       room: entry.room || (cls ? `Room ${cls.className}` : '')
                     };
+
+                    if (!myTimetable[day][period]) {
+                      myTimetable[day][period] = periodObj;
+                    } else if (Array.isArray(myTimetable[day][period])) {
+                      myTimetable[day][period].push(periodObj);
+                    } else {
+                      myTimetable[day][period] = [myTimetable[day][period], periodObj];
+                    }
                   }
                 }
               });
@@ -211,27 +221,33 @@ const Timetable = () => {
                       {day}
                     </td>
                     {periods.map((period) => {
-                      const entry = timetable[day]?.[period];
+                      const rawEntry = timetable[day]?.[period];
+                      const entriesList = Array.isArray(rawEntry) ? rawEntry : (rawEntry ? [rawEntry] : []);
+
                       return (
-                        <td key={period} className="p-3 border-r border-gray-100 last:border-0 text-center relative group h-24">
-                          {entry ? (
-                            <div className="bg-green-50 border border-green-200 rounded-lg p-2 h-full flex flex-col justify-center transition-colors">
-                              <span className="font-bold text-green-900 block text-xs mb-0.5">
-                                {entry.subjectName || getSubjectName(entry.subjectId)}
-                              </span>
-                              <span className="text-green-700 font-semibold text-[11px] block">
-                                {entry.className || getClassName(entry.classId)}
-                              </span>
-                              {entry.startTime && entry.endTime && (
-                                <span className="text-slate-500 text-[10px] block mt-0.5 font-mono">
-                                  {entry.startTime} – {entry.endTime}
-                                </span>
-                              )}
-                              {entry.room && (
-                                <span className="text-slate-400 text-[10px] block font-mono">
-                                  {entry.room}
-                                </span>
-                              )}
+                        <td key={period} className="p-2 border-r border-gray-100 last:border-0 text-center relative group min-h-[96px]">
+                          {entriesList.length > 0 ? (
+                            <div className="space-y-1.5 h-full flex flex-col justify-center">
+                              {entriesList.map((entry, idx) => (
+                                <div key={idx} className="bg-green-50 border border-green-200 rounded-lg p-2 transition-colors">
+                                  <span className="font-bold text-green-900 block text-xs mb-0.5">
+                                    {entry.subjectName || getSubjectName(entry.subjectId)}
+                                  </span>
+                                  <span className="text-green-700 font-semibold text-[11px] block">
+                                    {entry.className || getClassName(entry.classId)}
+                                  </span>
+                                  {entry.startTime && entry.endTime && (
+                                    <span className="text-slate-500 text-[10px] block mt-0.5 font-mono">
+                                      {entry.startTime} – {entry.endTime}
+                                    </span>
+                                  )}
+                                  {entry.room && (
+                                    <span className="text-slate-400 text-[10px] block font-mono">
+                                      {entry.room}
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
                             </div>
                           ) : (
                             <div className="text-slate-400 bg-slate-50/50 rounded-lg p-2 h-full flex flex-col justify-center font-medium text-xs">
