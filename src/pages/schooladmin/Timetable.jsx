@@ -80,12 +80,45 @@ const Timetable = () => {
     if (val) {
       const parts = val.split('___');
       const subjectId = parts[0] || '';
-      const teacherId = parts[1] || '';
+      let teacherId = parts[1] || '';
+      
+      if (!teacherId) {
+        const assignment = teacherAssignments.find(a => 
+          a.classId?.toString() === selectedClass.toString() && 
+          a.subjectId?.toString() === subjectId.toString()
+        );
+        if (assignment) {
+          teacherId = assignment.teacherId?.toString() || '';
+        }
+      }
+
       const cls = classes.find(c => c.id?.toString() === selectedClass.toString());
+      const sub = subjects.find(s => s.id?.toString() === subjectId.toString());
+      const tch = teachers.find(t => t.id?.toString() === teacherId.toString());
+
+      const periodTimeMap = {
+        '1': { startTime: '08:00 AM', endTime: '08:40 AM' },
+        '2': { startTime: '08:40 AM', endTime: '09:20 AM' },
+        '3': { startTime: '09:20 AM', endTime: '10:00 AM' },
+        '4': { startTime: '10:00 AM', endTime: '10:40 AM' },
+        'Break': { startTime: '10:40 AM', endTime: '11:00 AM' },
+        '5': { startTime: '11:00 AM', endTime: '11:40 AM' },
+        '6': { startTime: '11:40 AM', endTime: '12:20 PM' },
+        '7': { startTime: '12:20 PM', endTime: '01:00 PM' }
+      };
+
       entry = {
-        subjectId: subjectId,
-        teacherId: teacherId,
+        schoolId: schoolId,
         classId: selectedClass,
+        className: cls ? `${cls.className}-${cls.section}` : `Class ${selectedClass}`,
+        subjectId: subjectId,
+        subjectName: sub ? sub.subjectName : 'Subject',
+        teacherId: teacherId,
+        teacherName: tch ? tch.name : 'Teacher',
+        day: day,
+        period: period,
+        startTime: periodTimeMap[period]?.startTime || '',
+        endTime: periodTimeMap[period]?.endTime || '',
         room: cls ? `Room ${cls.className}` : `Room ${selectedClass}`
       };
     }

@@ -19,15 +19,17 @@ const Timetable = () => {
       let savedClasses = [];
       let savedSubjects = [];
       let savedUsers = [];
+      let savedAssignments = [];
 
       if (schoolId) {
         try {
           const { getCollection } = await import('../../utils/db');
-          const [remoteTt, remoteCls, remoteSub, remoteUsers] = await Promise.all([
+          const [remoteTt, remoteCls, remoteSub, remoteUsers, remoteAssign] = await Promise.all([
             getCollection('schoolAdminTimetable', schoolId),
             getCollection('schoolAdminClasses', schoolId),
             getCollection('schoolAdminSubjects', schoolId),
-            getCollection('schoolAdminUsers', schoolId)
+            getCollection('schoolAdminUsers', schoolId),
+            getCollection('schoolAdminTeacherAssignments', schoolId)
           ]);
 
           if (remoteTt && typeof remoteTt === 'object' && Object.keys(remoteTt).length > 0) {
@@ -57,24 +59,33 @@ const Timetable = () => {
           } else {
             savedUsers = JSON.parse(localStorage.getItem('schoolAdminUsers') || '[]');
           }
+
+          if (remoteAssign && Array.isArray(remoteAssign) && remoteAssign.length > 0) {
+            savedAssignments = remoteAssign;
+            localStorage.setItem('schoolAdminTeacherAssignments', JSON.stringify(remoteAssign));
+          } else {
+            savedAssignments = JSON.parse(localStorage.getItem('schoolAdminTeacherAssignments') || '[]');
+          }
         } catch (e) {
           savedTimetable = JSON.parse(localStorage.getItem('schoolAdminTimetable') || '{}');
           savedClasses = JSON.parse(localStorage.getItem('schoolAdminClasses') || '[]');
           savedSubjects = JSON.parse(localStorage.getItem('schoolAdminSubjects') || '[]');
           savedUsers = JSON.parse(localStorage.getItem('schoolAdminUsers') || '[]');
+          savedAssignments = JSON.parse(localStorage.getItem('schoolAdminTeacherAssignments') || '[]');
         }
       } else {
         savedTimetable = JSON.parse(localStorage.getItem('schoolAdminTimetable') || '{}');
         savedClasses = JSON.parse(localStorage.getItem('schoolAdminClasses') || '[]');
         savedSubjects = JSON.parse(localStorage.getItem('schoolAdminSubjects') || '[]');
         savedUsers = JSON.parse(localStorage.getItem('schoolAdminUsers') || '[]');
+        savedAssignments = JSON.parse(localStorage.getItem('schoolAdminTeacherAssignments') || '[]');
       }
 
       setClasses(savedClasses);
       setSubjects(savedSubjects);
       setTeachers(savedUsers.filter(u => u.role?.toLowerCase() === 'teacher'));
 
-      // Filter timetable strictly for logged-in teacher
+      // Filter timetable strictly for logged-in teacher and current schoolId
       const myTimetable = {};
       Object.keys(savedTimetable).forEach(classId => {
         const classTimetable = savedTimetable[classId];
@@ -84,13 +95,39 @@ const Timetable = () => {
             if (dayTimetable && typeof dayTimetable === 'object') {
               Object.keys(dayTimetable).forEach(period => {
                 const entry = dayTimetable[period];
-                if (entry && typeof entry === 'object' && entry.teacherId?.toString() === authUser.id?.toString()) {
-                  if (!myTimetable[day]) myTimetable[day] = {};
-                  myTimetable[day][period] = { 
-                    classId, 
-                    subjectId: entry.subjectId,
-                    room: entry.room || ''
-                  };
+                if (entry && typeof entry === 'object') {
+                  const entrySchoolId = entry.schoolId || schoolId;
+                  const isSameSchool = !entrySchoolId || entrySchoolId.toString() === schoolId.toString();
+                  
+                  let isAssignedToMe = entry.teacherId?.toString() === authUser.id?.toString();
+
+                  // Fallback: cross-check with saved assignments if teacherId was not recorded in entry
+                  if (!isAssignedToMe && savedAssignments.length > 0) {
+                    const assignMatch = savedAssignments.find(a => 
+                      a.classId?.toString() === classId.toString() && 
+                      a.subjectId?.toString() === entry.subjectId?.toString()
+                    );
+                    if (assignMatch && assignMatch.teacherId?.toString() === authUser.id?.toString()) {
+                      isAssignedToMe = true;
+                    }
+                  }
+
+                  if (isSameSchool && isAssignedToMe) {
+                    if (!myTimetable[day]) myTimetable[day] = {};
+                    const cls = savedClasses.find(c => c.id?.toString() === classId.toString());
+                    const sub = savedSubjects.find(s => s.id?.toString() === entry.subjectId?.toString());
+
+                    myTimetable[day][period] = { 
+                      ...entry,
+                      classId, 
+                      className: entry.className || (cls ? `${cls.className}-${cls.section}` : `Class ${classId}`),
+                      subjectId: entry.subjectId,
+                      subjectName: entry.subjectName || (sub ? sub.subjectName : 'Subject'),
+                      startTime: entry.startTime || '',
+                      endTime: entry.endTime || '',
+                      room: entry.room || (cls ? `Room ${cls.className}` : '')
+                    };
+                  }
                 }
               });
             }
@@ -132,7 +169,10 @@ const Timetable = () => {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center text-gray-500">
           <Calendar size={48} className="mx-auto text-gray-300 mb-4 animate-pulse" />
           <p className="font-semibold text-lg text-slate-700">No Classes Scheduled</p>
-          <p className="text-slate-400 text-sm mt-1">No timetable periods have been configured for you yet.</p>
+          <p className="text-slate-400 text-sm mt-1 max-w-md mx-auto">
+            No timetable periods have been assigned to your account yet. 
+            If you believe this is an error, please ensure your School Administrator has assigned you to your subject classes in Timetable Management.
+          </p>
         </div>
       ) : (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -160,12 +200,22 @@ const Timetable = () => {
                         <td key={period} className="p-3 border-r border-gray-100 last:border-0 text-center relative group h-24">
                           {entry ? (
                             <div className="bg-green-50 border border-green-200 rounded-lg p-2 h-full flex flex-col justify-center transition-colors">
-                              <span className="font-semibold text-green-800 block text-xs mb-1">
-                                {getSubjectName(entry.subjectId)}
+                              <span className="font-bold text-green-900 block text-xs mb-0.5">
+                                {entry.subjectName || getSubjectName(entry.subjectId)}
                               </span>
-                              <span className="text-green-600 text-[11px] block">
-                                Class: {getClassName(entry.classId)}
+                              <span className="text-green-700 font-semibold text-[11px] block">
+                                {entry.className || getClassName(entry.classId)}
                               </span>
+                              {entry.startTime && entry.endTime && (
+                                <span className="text-slate-500 text-[10px] block mt-0.5 font-mono">
+                                  {entry.startTime} – {entry.endTime}
+                                </span>
+                              )}
+                              {entry.room && (
+                                <span className="text-slate-400 text-[10px] block font-mono">
+                                  {entry.room}
+                                </span>
+                              )}
                             </div>
                           ) : (
                             <div className="text-slate-400 bg-slate-50/50 rounded-lg p-2 h-full flex flex-col justify-center font-medium text-xs">
