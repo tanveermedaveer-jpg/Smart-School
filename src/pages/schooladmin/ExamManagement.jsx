@@ -56,9 +56,15 @@ const ExamManagement = () => {
     setSubjects(savedSubjects);
   };
 
-  const saveToLocal = (updatedExams) => {
+  const saveToLocal = async (updatedExams) => {
     setExams(updatedExams);
     localStorage.setItem('schoolAdminExams', JSON.stringify(updatedExams));
+    try {
+      const { saveCollection } = await import('../../utils/db');
+      await saveCollection('schoolAdminExams', schoolId, updatedExams);
+    } catch (e) {
+      console.warn('Error syncing exams to backend:', e);
+    }
   };
 
   const handleInputChange = (e) => {
@@ -127,7 +133,20 @@ const ExamManagement = () => {
     setEditingId(null);
   };
 
-  const handleSubmit = (e) => {
+  const parseDateOnly = (dateStr) => {
+    if (!dateStr) return null;
+    const cleanStr = dateStr.toString().split('T')[0].trim();
+    const parts = cleanStr.split('-');
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      return new Date(year, month, day).getTime();
+    }
+    return new Date(dateStr).getTime();
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.examName || !formData.academicSession || !formData.startDate || !formData.endDate) {
@@ -135,7 +154,10 @@ const ExamManagement = () => {
       return;
     }
 
-    if (new Date(formData.startDate) > new Date(formData.endDate)) {
+    const startTimestamp = parseDateOnly(formData.startDate);
+    const endTimestamp = parseDateOnly(formData.endDate);
+
+    if (startTimestamp && endTimestamp && startTimestamp > endTimestamp) {
       toast.error('Start Date cannot be after End Date.');
       return;
     }
@@ -150,8 +172,8 @@ const ExamManagement = () => {
     formData.participatingClasses.forEach(cId => {
       const config = formData.subjectConfigs[cId] || {};
       Object.keys(config).forEach(subId => {
-        const { totalMarks, passingMarks } = config[subId];
-        if (totalMarks <= 0 || passingMarks <= 0) {
+        const { totalMarks, passingMarks } = config[subId] || {};
+        if (totalMarks === undefined || passingMarks === undefined || totalMarks <= 0 || passingMarks <= 0) {
           configError = true;
         }
         if (passingMarks > totalMarks) {
@@ -174,12 +196,12 @@ const ExamManagement = () => {
 
     if (editingId) {
       const updated = exams.map(ex => ex.id === editingId ? { ...payload, id: editingId } : ex);
-      saveToLocal(updated);
+      await saveToLocal(updated);
       toast.success('Exam structure updated successfully.');
       logSystemAction('Exam Configuration Modified', authUser.name || 'School Admin', authUser.role || 'School Admin', `Exam: ${formData.examName}`);
     } else {
       const newExam = { ...payload, id: Date.now(), createdAt: new Date().toISOString() };
-      saveToLocal([...exams, newExam]);
+      await saveToLocal([...exams, newExam]);
       toast.success('Exam structure created successfully.');
       logSystemAction('Exam Configuration Created', authUser.name || 'School Admin', authUser.role || 'School Admin', `Exam: ${formData.examName}`);
     }

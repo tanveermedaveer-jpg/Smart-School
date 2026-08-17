@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import toast from 'react-hot-toast';
 
 export const exportToCSV = (tableId, filename) => {
@@ -12,18 +12,10 @@ export const exportToCSV = (tableId, filename) => {
   const rows = Array.from(table.querySelectorAll('tr'));
   
   const csvData = rows.map(row => {
-    // Only get th or td, but avoid the last column if it's "Actions"
     const cells = Array.from(row.querySelectorAll('th, td'));
-    
-    // We want to skip columns that represent "Actions" typically the last one.
-    // Let's filter out text content if we detect action buttons (like Edit/Delete)
-    // Actually, it's safer to just extract text and let it be, but if the header says "Actions" or "Action", we should ideally skip it.
-    
-    // Instead, let's just grab all text
     let rowData = cells.map(cell => {
       let text = cell.innerText || cell.textContent;
-      text = text.replace(/"/g, '""'); // escape quotes
-      // Remove newline chars for cleaner csv
+      text = text.replace(/"/g, '""');
       text = text.replace(/(\r\n|\n|\r)/gm, ' ');
       return `"${text.trim()}"`;
     });
@@ -47,27 +39,54 @@ export const exportToCSV = (tableId, filename) => {
 };
 
 export const exportToPDF = (tableId, filename, title) => {
-  const table = document.getElementById(tableId);
-  if (!table) {
-    toast.error('Could not find data to export.');
-    return;
+  try {
+    const table = document.getElementById(tableId);
+    if (!table) {
+      toast.error('Could not find data table to export.');
+      return;
+    }
+
+    const doc = new jsPDF('p', 'pt', 'a4');
+    
+    doc.setFontSize(14);
+    doc.setTextColor(15, 23, 42);
+    doc.text(title || filename || 'Report', 40, 40);
+
+    let schoolName = '';
+    try {
+      const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
+      schoolName = authUser.schoolName || authUser.name || '';
+    } catch (e) {}
+
+    if (schoolName) {
+      doc.setFontSize(9);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`${schoolName} | Generated: ${new Date().toLocaleDateString()}`, 40, 54);
+    }
+
+    autoTable(doc, {
+      html: `#${tableId}`,
+      startY: schoolName ? 65 : 55,
+      theme: 'grid',
+      styles: { fontSize: 8, cellPadding: 5 },
+      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+      didParseCell: function(data) {
+        if (data.column.index === data.table.columns.length - 1) {
+          const rawCell = data.cell.raw;
+          if (rawCell && (rawCell.querySelector('button') || (rawCell.innerText || '').toLowerCase().includes('action'))) {
+            data.cell.text = [];
+          }
+        }
+      }
+    });
+
+    const safeName = (filename || 'Report').replace(/[^a-zA-Z0-9_-]/g, '_');
+    doc.save(`${safeName}_${new Date().toISOString().split('T')[0]}.pdf`);
+    toast.success('PDF downloaded successfully.');
+  } catch (err) {
+    console.error('PDF Generation Error:', err);
+    toast.error('Failed to generate PDF document.');
   }
-
-  const doc = new jsPDF('p', 'pt', 'a4');
-  
-  doc.setFontSize(16);
-  doc.text(title || filename, 40, 40);
-  
-  doc.autoTable({
-    html: `#${tableId}`,
-    startY: 60,
-    theme: 'grid',
-    styles: { fontSize: 10 },
-    headStyles: { fillColor: [15, 23, 42] }, // darkBlue color roughly
-  });
-
-  doc.save(`${filename}_${new Date().toISOString().split('T')[0]}.pdf`);
-  toast.success('PDF downloaded successfully.');
 };
 
 export const printPage = () => {
