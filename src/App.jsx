@@ -38,6 +38,7 @@ import TeacherTimetable from './pages/teacher/Timetable';
 import TeacherNotices from './pages/teacher/Notices';
 import TeacherProfile from './pages/teacher/Profile';
 import TeacherQrAttendance from './pages/teacher/QrAttendance';
+import TeacherMySalary from './pages/teacher/MySalary';
 
 
 // Student Portal
@@ -186,6 +187,7 @@ function App() {
           <Route path="homework" element={<TeacherHomework />} />
           <Route path="timetable" element={<TeacherTimetable />} />
           <Route path="notices" element={<TeacherNotices />} />
+          <Route path="my-salary" element={<TeacherMySalary />} />
           <Route path="profile" element={<TeacherProfile />} />
           <Route path="*" element={<PlaceholderModule title="Teacher Module" />} />
         </Route>

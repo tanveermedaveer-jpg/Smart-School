@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, UserCheck, Edit3, Upload, 
-  Calendar, Bell, User, LogOut, Sun, Moon, QrCode 
+  Calendar, Bell, User, LogOut, Sun, Moon, QrCode, DollarSign 
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
@@ -52,6 +52,7 @@ const TeacherLayout = () => {
     { path: '/teacher/homework', icon: <Upload size={20} />, label: 'Upload Homework' },
     { path: '/teacher/timetable', icon: <Calendar size={20} />, label: 'Timetable' },
     { path: '/teacher/notices', icon: <Bell size={20} />, label: 'Notices' },
+    { path: '/teacher/my-salary', icon: <DollarSign size={20} />, label: 'My Salary' },
     { path: '/teacher/profile', icon: <User size={20} />, label: 'Update Profile' },
   ];
 
