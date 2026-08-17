@@ -176,12 +176,12 @@ const FeeStructure = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Fee Structure</h2>
           <p className="text-gray-500 text-sm mt-1">Manage standard fee structures for each class section and session.</p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 flex-wrap gap-y-2">
           <input 
             type="text" 
             placeholder="Search by Class..." 

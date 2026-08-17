@@ -639,7 +639,7 @@ const UserManagement = () => {
           <h2 className="text-2xl font-bold text-gray-800">User Management</h2>
           <p className="text-gray-500 text-sm mt-1">Manage details and placements for teachers, students, and parent accounts.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <ExportButtons tableId="export-table" filename={`School_${activeTab}s`} />
           <button
             onClick={() => openModal()}

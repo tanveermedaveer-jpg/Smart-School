@@ -741,13 +741,13 @@ const Classes = () => {
   // STANDARD CLASS LISTING VIEW
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Classes & Sections Management</h2>
           <p className="text-gray-500 text-sm mt-1">Manage class sections and view detailed academic configurations.</p>
         </div>
         {classes.length > 0 && (
-          <button onClick={() => openModal()} className="bg-greenAccent hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 shadow-sm text-xs font-bold uppercase tracking-wider">
+          <button onClick={() => openModal()} className="bg-greenAccent hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 shadow-sm text-xs font-bold uppercase tracking-wider shrink-0">
             <Plus size={16} />
             <span>Add Class</span>
           </button>

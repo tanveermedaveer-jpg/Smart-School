@@ -119,12 +119,12 @@ const Results = () => {
       </div>
 
       {/* Select Child Toggle Buttons */}
-      <div className="flex bg-gray-100 p-1 rounded-xl w-fit">
+      <div className="flex bg-gray-100 p-1 rounded-xl w-full max-w-full overflow-x-auto">
         {children.map(child => (
           <button
             key={child.id}
             onClick={() => setSelectedChildId(child.id?.toString() || '')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all uppercase tracking-wider ${selectedChildId === child.id?.toString() ? 'bg-white text-darkBlue shadow' : 'text-gray-500 hover:text-gray-800'}`}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all uppercase tracking-wider whitespace-nowrap ${selectedChildId === child.id?.toString() ? 'bg-white text-darkBlue shadow' : 'text-gray-500 hover:text-gray-800'}`}
           >
             {child.name} ({getClassName(child.classId)})
           </button>
@@ -173,7 +173,7 @@ const Results = () => {
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-5 divide-y md:divide-y-0 md:divide-x divide-gray-100 border-b border-gray-100 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-gray-100 border-b border-gray-100 text-xs">
                 <div className="p-4 text-center">
                   <span className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Max Marks</span>
                   <strong className="text-lg font-bold text-gray-700">{result.totalPossibleMarks}</strong>
@@ -190,7 +190,7 @@ const Results = () => {
                   <span className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Final Grade</span>
                   <strong className="text-xl font-black text-darkBlue block">{result.overallGrade}</strong>
                 </div>
-                <div className="p-4 text-center flex flex-col justify-center items-center col-span-2 md:col-span-1">
+                <div className="p-4 text-center flex flex-col justify-center items-center col-span-2 sm:col-span-1">
                   <span className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Status</span>
                   <span className={`px-3 py-1 rounded text-[10px] font-bold ${result.status === 'PASS' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>{result.status}</span>
                 </div>

@@ -196,12 +196,12 @@ const Subjects = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Subjects Management</h2>
           <p className="text-gray-500 text-sm mt-1">Create subjects and assign them to classes and teachers.</p>
         </div>
-        <button onClick={() => openModal()} className="bg-greenAccent hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 shadow-sm text-xs">
+        <button onClick={() => openModal()} className="bg-greenAccent hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 shadow-sm text-xs shrink-0">
           <Plus size={16} />
           <span>Add Subject</span>
         </button>

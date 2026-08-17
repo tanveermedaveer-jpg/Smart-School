@@ -122,7 +122,7 @@ const Results = () => {
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-5 divide-y md:divide-y-0 md:divide-x divide-gray-100 border-b border-gray-100 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-gray-100 border-b border-gray-100 text-xs">
                 <div className="p-4 text-center">
                   <span className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Max Marks</span>
                   <strong className="text-lg font-bold text-gray-700">{result.totalPossibleMarks}</strong>
@@ -139,7 +139,7 @@ const Results = () => {
                   <span className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Final Grade</span>
                   <strong className="text-xl font-black text-darkBlue block">{result.overallGrade}</strong>
                 </div>
-                <div className="p-4 text-center flex flex-col justify-center items-center col-span-2 md:col-span-1">
+                <div className="p-4 text-center flex flex-col justify-center items-center col-span-2 sm:col-span-1">
                   <span className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Status</span>
                   <span className={`px-3 py-1 rounded text-[10px] font-bold ${result.status === 'PASS' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>{result.status}</span>
                 </div>
