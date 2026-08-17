@@ -92,57 +92,57 @@ const Attendance = () => {
       </div>
 
       {/* Select Child Toggle Buttons */}
-      <div className="flex bg-gray-100 p-1 rounded-xl w-fit">
+      <div className="flex bg-gray-100 p-1 rounded-xl w-full max-w-full overflow-x-auto">
         {children.map(child => (
           <button
             key={child.id}
             onClick={() => setSelectedChildId(child.id?.toString() || '')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all uppercase tracking-wider ${selectedChildId === child.id?.toString() ? 'bg-white text-darkBlue shadow' : 'text-gray-500 hover:text-gray-800'}`}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all uppercase tracking-wider whitespace-nowrap ${selectedChildId === child.id?.toString() ? 'bg-white text-darkBlue shadow' : 'text-gray-500 hover:text-gray-800'}`}
           >
             {child.name} ({getClassName(child.classId)})
           </button>
         ))}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
-          <div className="p-3 bg-blue-100 text-blue-600 rounded-lg"><CalendarIcon size={24} /></div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4 mb-6">
+        <div className="bg-white p-3 sm:p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-2.5 sm:space-x-4">
+          <div className="p-2.5 sm:p-3 bg-blue-100 text-blue-600 rounded-lg shrink-0"><CalendarIcon size={20} className="sm:w-6 sm:h-6" /></div>
           <div>
-            <p className="text-xs text-gray-500 font-medium">Overall</p>
-            <h3 className="text-xl font-bold text-gray-800">{percent}%</h3>
+            <p className="text-[10px] sm:text-xs text-gray-500 font-medium">Overall</p>
+            <h3 className="text-base sm:text-xl font-bold text-gray-800">{percent}%</h3>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
-          <div className="p-3 bg-green-100 text-green-600 rounded-lg"><CheckCircle size={24} /></div>
+        <div className="bg-white p-3 sm:p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-2.5 sm:space-x-4">
+          <div className="p-2.5 sm:p-3 bg-green-100 text-green-600 rounded-lg shrink-0"><CheckCircle size={20} className="sm:w-6 sm:h-6" /></div>
           <div>
-            <p className="text-xs text-gray-500 font-medium">Present</p>
-            <h3 className="text-xl font-bold text-gray-800">{stats.present}</h3>
+            <p className="text-[10px] sm:text-xs text-gray-500 font-medium">Present</p>
+            <h3 className="text-base sm:text-xl font-bold text-gray-800">{stats.present}</h3>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
-          <div className="p-3 bg-red-100 text-red-600 rounded-lg"><XCircle size={24} /></div>
+        <div className="bg-white p-3 sm:p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-2.5 sm:space-x-4">
+          <div className="p-2.5 sm:p-3 bg-red-100 text-red-600 rounded-lg shrink-0"><XCircle size={20} className="sm:w-6 sm:h-6" /></div>
           <div>
-            <p className="text-xs text-gray-500 font-medium">Absent</p>
-            <h3 className="text-xl font-bold text-gray-800">{stats.absent}</h3>
+            <p className="text-[10px] sm:text-xs text-gray-500 font-medium">Absent</p>
+            <h3 className="text-base sm:text-xl font-bold text-gray-800">{stats.absent}</h3>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
-          <div className="p-3 bg-yellow-100 text-yellow-600 rounded-lg"><AlertCircle size={24} /></div>
+        <div className="bg-white p-3 sm:p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-2.5 sm:space-x-4">
+          <div className="p-2.5 sm:p-3 bg-yellow-100 text-yellow-600 rounded-lg shrink-0"><AlertCircle size={20} className="sm:w-6 sm:h-6" /></div>
           <div>
-            <p className="text-xs text-gray-500 font-medium">Late</p>
-            <h3 className="text-xl font-bold text-gray-800">{stats.late}</h3>
+            <p className="text-[10px] sm:text-xs text-gray-500 font-medium">Late</p>
+            <h3 className="text-base sm:text-xl font-bold text-gray-800">{stats.late}</h3>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
-          <div className="p-3 bg-purple-100 text-purple-600 rounded-lg"><Info size={24} /></div>
+        <div className="bg-white p-3 sm:p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-2.5 sm:space-x-4 col-span-2 sm:col-span-1">
+          <div className="p-2.5 sm:p-3 bg-purple-100 text-purple-600 rounded-lg shrink-0"><Info size={20} className="sm:w-6 sm:h-6" /></div>
           <div>
-            <p className="text-xs text-gray-500 font-medium">Leave</p>
-            <h3 className="text-xl font-bold text-gray-800">{stats.leave}</h3>
+            <p className="text-[10px] sm:text-xs text-gray-500 font-medium">Leave</p>
+            <h3 className="text-base sm:text-xl font-bold text-gray-800">{stats.leave}</h3>
           </div>
         </div>
       </div>
 
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
         <span className="text-xs text-gray-500 font-semibold">Detailed Log History</span>
         <ExportButtons tableId="export-table" filename="Child_Attendance" />
       </div>

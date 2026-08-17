@@ -365,10 +365,12 @@ const TeacherAttendance = () => {
                       <td className="p-3 font-semibold text-darkBlue">{getClassName(h.classId)}</td>
                       <td className="p-3 font-medium text-gray-500">{getSubjectName(h.subjectId)}</td>
                       <td className="p-3 text-center">
-                        <span className="bg-green-50 border border-green-200 text-green-700 px-2 py-0.5 rounded mr-1">P: {present}</span>
-                        <span className="bg-red-50 border border-red-200 text-red-700 px-2 py-0.5 rounded mr-1">A: {absent}</span>
-                        <span className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-2 py-0.5 rounded mr-1">L: {late}</span>
-                        <span className="bg-blue-50 border border-blue-200 text-blue-700 px-2 py-0.5 rounded">LV: {leave}</span>
+                        <div className="flex items-center justify-center flex-wrap gap-1">
+                          <span className="bg-green-50 border border-green-200 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold">P: {present}</span>
+                          <span className="bg-red-50 border border-red-200 text-red-700 px-2 py-0.5 rounded text-[10px] font-bold">A: {absent}</span>
+                          <span className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-2 py-0.5 rounded text-[10px] font-bold">L: {late}</span>
+                          <span className="bg-blue-50 border border-blue-200 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold">LV: {leave}</span>
+                        </div>
                       </td>
                     </tr>
                   );

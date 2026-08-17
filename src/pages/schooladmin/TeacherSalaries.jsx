@@ -763,8 +763,8 @@ const TeacherSalaries = () => {
 
       {/* --- MODAL: PAY SALARY --- */}
       {showPaymentModal && selectedTeacherForPayment && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-gray-100 animate-scale-up">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-100 animate-scale-up">
             <div className="bg-darkBlue text-white p-5 flex justify-between items-center">
               <div>
                 <h3 className="font-black text-sm">Disburse Salary</h3>
@@ -885,8 +885,8 @@ const TeacherSalaries = () => {
 
       {/* --- MODAL: EDIT DEFAULT SALARY --- */}
       {showEditSalaryModal && selectedTeacherForSalaryEdit && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full shadow-2xl overflow-hidden border border-gray-100 animate-scale-up">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-sm w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-100 animate-scale-up">
             <div className="bg-darkBlue text-white p-5 flex justify-between items-center">
               <div>
                 <h3 className="font-black text-sm">Set Monthly Salary</h3>
@@ -936,7 +936,7 @@ const TeacherSalaries = () => {
 
       {/* --- MODAL: TEACHER DETAILS & LEDGER --- */}
       {showDetailsModal && selectedTeacherDetails && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-100 animate-scale-up">
             
             <div className="bg-darkBlue text-white p-6 flex justify-between items-start sticky top-0 z-10">

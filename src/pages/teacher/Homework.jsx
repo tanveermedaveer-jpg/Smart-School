@@ -138,8 +138,8 @@ const Homework = () => {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="bg-darkBlue px-6 py-4 flex justify-between items-center text-white">
               <h3 className="text-xl font-semibold">{formData.id ? 'Edit Homework' : 'Assign Homework'}</h3>
               <button onClick={() => setIsModalOpen(false)} className="text-gray-300 hover:text-white transition-colors">&times;</button>
