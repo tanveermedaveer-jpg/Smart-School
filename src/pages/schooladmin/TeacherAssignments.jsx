@@ -262,30 +262,30 @@ const TeacherAssignments = () => {
           <h2 className="text-2xl font-bold text-gray-800">Teacher Assignments</h2>
           <p className="text-gray-500 text-sm mt-1">Associate teachers to specific school classes, sections, and subjects.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex bg-gray-100 p-1 rounded-xl">
+        <div className="w-full sm:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="flex bg-gray-100 p-1 rounded-xl w-full sm:w-auto max-w-full overflow-x-auto">
             <button
               onClick={() => setViewMode('list')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${viewMode === 'list' ? 'bg-white text-darkBlue shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
+              className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${viewMode === 'list' ? 'bg-white text-darkBlue shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
             >
               List View
             </button>
             <button
               onClick={() => setViewMode('class-wise')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${viewMode === 'class-wise' ? 'bg-white text-darkBlue shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
+              className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${viewMode === 'class-wise' ? 'bg-white text-darkBlue shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
             >
               Class-wise View
             </button>
             <button
               onClick={() => setViewMode('workload')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${viewMode === 'workload' ? 'bg-white text-darkBlue shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
+              className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${viewMode === 'workload' ? 'bg-white text-darkBlue shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
             >
               Teacher Workload
             </button>
           </div>
           <button
             onClick={() => openModal()}
-            className="bg-greenAccent hover:bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors flex items-center space-x-2 shadow-sm"
+            className="w-full sm:w-auto bg-greenAccent hover:bg-green-600 text-white px-4 py-2.5 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center justify-center space-x-2 shadow-md sm:shadow-sm shrink-0"
           >
             <Plus size={16} />
             <span>Assign Teacher</span>
