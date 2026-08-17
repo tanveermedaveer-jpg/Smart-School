@@ -161,9 +161,14 @@ const Timetable = () => {
           <h2 className="text-2xl font-bold text-gray-800">Timetable Management</h2>
           <p className="text-gray-500 text-sm mt-1">Create and manage class schedules.</p>
         </div>
-        <div className="flex items-center space-x-2 sm:space-x-3 flex-wrap gap-y-2">
-          <ExportButtons tableId="export-table" filename="Timetable Management" />
-          <button onClick={handleSave} className="bg-greenAccent hover:bg-green-600 text-white px-3.5 sm:px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 shadow-sm text-xs sm:text-sm shrink-0">
+        <div className="w-full sm:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="flex items-center justify-between sm:justify-start gap-2">
+            <ExportButtons tableId="export-table" filename="Timetable Management" />
+          </div>
+          <button 
+            onClick={handleSave} 
+            className="w-full sm:w-auto bg-greenAccent hover:bg-green-600 text-white px-4 py-2.5 sm:py-2 rounded-xl sm:rounded-lg font-bold sm:font-medium transition-all flex items-center justify-center space-x-2 shadow-md sm:shadow-sm text-xs sm:text-sm shrink-0"
+          >
             <Save size={18} />
             <span>Save Timetable</span>
           </button>
