@@ -156,19 +156,19 @@ const Timetable = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Timetable Management</h2>
           <p className="text-gray-500 text-sm mt-1">Create and manage class schedules.</p>
         </div>
-        <div className="flex items-center space-x-3">
-        <ExportButtons tableId="export-table" filename="Timetable Management" />
-        <button onClick={handleSave} className="bg-greenAccent hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 shadow-sm">
-          <Save size={20} />
-          <span>Save Timetable</span>
-        </button>
+        <div className="flex items-center space-x-2 sm:space-x-3 flex-wrap gap-y-2">
+          <ExportButtons tableId="export-table" filename="Timetable Management" />
+          <button onClick={handleSave} className="bg-greenAccent hover:bg-green-600 text-white px-3.5 sm:px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 shadow-sm text-xs sm:text-sm shrink-0">
+            <Save size={18} />
+            <span>Save Timetable</span>
+          </button>
+        </div>
       </div>
-</div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-1">Select Class</label>
