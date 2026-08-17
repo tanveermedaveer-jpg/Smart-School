@@ -85,10 +85,26 @@ const Timetable = () => {
       setSubjects(savedSubjects);
       setTeachers(savedUsers.filter(u => u.role?.toLowerCase() === 'teacher'));
 
+      // Normalize savedTimetable to object dictionary format defensively
+      let timetableDict = {};
+      if (Array.isArray(savedTimetable)) {
+        savedTimetable.forEach(item => {
+          if (item && typeof item === 'object') {
+            Object.keys(item).forEach(k => {
+              if (k !== 'schoolId' && k !== 'school_id' && typeof item[k] === 'object') {
+                timetableDict[k] = item[k];
+              }
+            });
+          }
+        });
+      } else if (savedTimetable && typeof savedTimetable === 'object') {
+        timetableDict = savedTimetable;
+      }
+
       // Filter timetable strictly for logged-in teacher and current schoolId
       const myTimetable = {};
-      Object.keys(savedTimetable).forEach(classId => {
-        const classTimetable = savedTimetable[classId];
+      Object.keys(timetableDict).forEach(classId => {
+        const classTimetable = timetableDict[classId];
         if (classTimetable && typeof classTimetable === 'object') {
           Object.keys(classTimetable).forEach(day => {
             const dayTimetable = classTimetable[day];

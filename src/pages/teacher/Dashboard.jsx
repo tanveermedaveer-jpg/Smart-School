@@ -81,6 +81,21 @@ const Dashboard = () => {
 
     // 5. Calculate Upcoming Class dynamically from School Admin Timetable
     const savedTimetable = JSON.parse(localStorage.getItem('schoolAdminTimetable') || '{}');
+    let timetableDict = {};
+    if (Array.isArray(savedTimetable)) {
+      savedTimetable.forEach(item => {
+        if (item && typeof item === 'object') {
+          Object.keys(item).forEach(k => {
+            if (k !== 'schoolId' && k !== 'school_id' && typeof item[k] === 'object') {
+              timetableDict[k] = item[k];
+            }
+          });
+        }
+      });
+    } else if (savedTimetable && typeof savedTimetable === 'object') {
+      timetableDict = savedTimetable;
+    }
+
     const todayDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
     const periodTimes = {
       '1': '08:00 AM – 08:40 AM',
@@ -93,8 +108,8 @@ const Dashboard = () => {
     };
 
     let nextClass = null;
-    Object.keys(savedTimetable).forEach(classId => {
-      const classTimetable = savedTimetable[classId];
+    Object.keys(timetableDict).forEach(classId => {
+      const classTimetable = timetableDict[classId];
       if (classTimetable && classTimetable[todayDay]) {
         const daySlots = classTimetable[todayDay];
         Object.keys(daySlots).forEach(periodKey => {

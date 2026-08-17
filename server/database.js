@@ -631,12 +631,34 @@ function getCollection(key, schoolId) {
     });
   }
   
+  if (prop === 'timetable') {
+    let ttData = db.timetable || {};
+    if (Array.isArray(ttData)) {
+      const merged = {};
+      ttData.forEach(item => {
+        if (item && typeof item === 'object') {
+          Object.keys(item).forEach(k => {
+            if (k !== 'schoolId' && k !== 'school_id' && typeof item[k] === 'object') {
+              merged[k] = item[k];
+            }
+          });
+        }
+      });
+      return merged;
+    }
+    return ttData;
+  }
+
   if (!schoolId || schoolId === 'SYSTEM') {
     return list;
   }
   
   if (prop === 'schools') {
     return list.filter(item => item.id && item.id.toString() === schoolId.toString());
+  }
+
+  if (!Array.isArray(list)) {
+    return list;
   }
 
   return list.filter(item => {
@@ -693,6 +715,19 @@ async function saveCollection(key, schoolId, updatedItems) {
   // Prevent non-Super Admin from writing to schools and superAdminAcademicTemplates
   if ((prop === 'schools' || prop === 'superAdminAcademicTemplates') && schoolId && schoolId !== 'SYSTEM') {
     console.warn(`[Database] Blocked non-Super Admin (schoolId: ${schoolId}) from modifying ${prop} collection.`);
+    return;
+  }
+
+  if (prop === 'timetable') {
+    if (!db.timetable || typeof db.timetable !== 'object' || Array.isArray(db.timetable)) {
+      db.timetable = {};
+    }
+    if (updatedItems && typeof updatedItems === 'object' && !Array.isArray(updatedItems)) {
+      db.timetable = { ...db.timetable, ...updatedItems };
+    } else if (Array.isArray(updatedItems)) {
+      db.timetable = updatedItems;
+    }
+    await writeDb(db);
     return;
   }
 
