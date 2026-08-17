@@ -39,10 +39,12 @@ const Dashboard = () => {
     return sId === currentSchoolId;
   });
 
+  const displaySchoolCode = foundSchool?.code || foundSchool?.schoolCode || authUser.schoolCode || schoolSettings.schoolCode || (foundSchool?.id ? `TEM-${foundSchool.id.substring(Math.max(0, foundSchool.id.length - 4))}` : 'TEM-2026-001');
+
   const mySchool = foundSchool || (currentSchoolId ? {
     id: currentSchoolId,
     name: authUser.schoolName || contextUser?.schoolName || schoolSettings.schoolName || (authUser.name ? `${authUser.name}'s School` : 'School Portal'),
-    code: authUser.schoolCode || contextUser?.schoolCode || schoolSettings.schoolCode || currentSchoolId,
+    code: displaySchoolCode,
     email: authUser.email || contextUser?.email || '',
     phone: authUser.phone || contextUser?.phone || schoolSettings.phone || ''
   } : null);
@@ -141,7 +143,7 @@ const Dashboard = () => {
         role="School Admin"
         details={[
           { label: 'School Name', value: mySchool?.name || schoolSettings.schoolName || 'Not Set' },
-          { label: 'School Code', value: mySchool?.code || authUser.schoolId || 'N/A' },
+          { label: 'School Code', value: displaySchoolCode || mySchool?.code || 'TEM-2026-001' },
           { label: 'Email', value: authUser.email || 'N/A' },
           { label: 'Phone', value: authUser.phone || schoolSettings.phone || 'N/A' }
         ]}

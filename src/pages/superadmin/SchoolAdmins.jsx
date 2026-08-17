@@ -84,13 +84,14 @@ const SchoolAdmins = () => {
     e.preventDefault();
     const selectedSchool = schools.find(s => s.id?.toString() === formData.schoolId?.toString());
     const schoolName = selectedSchool ? selectedSchool.name : (formData.schoolName || '');
+    const schoolCode = selectedSchool ? (selectedSchool.code || selectedSchool.schoolCode || 'TEM-2026-001') : (formData.schoolCode || 'TEM-2026-001');
     
     if (editingId) {
-      const updated = users.map(u => u.id === editingId ? { ...formData, schoolName, id: editingId } : u);
+      const updated = users.map(u => u.id === editingId ? { ...formData, schoolName, schoolCode, id: editingId } : u);
       await saveToDb(updated);
       toast.success('School Admin updated successfully');
     } else {
-      const newAdmin = { ...formData, schoolName, id: Date.now().toString(), isTemporaryPassword: false, role: 'schoolAdmin' };
+      const newAdmin = { ...formData, schoolName, schoolCode, id: Date.now().toString(), isTemporaryPassword: false, role: 'schoolAdmin' };
       await saveToDb([...users, newAdmin]);
       toast.success('School Admin created successfully');
     }

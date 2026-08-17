@@ -191,13 +191,15 @@ const Schools = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const formattedCode = (formData.code && formData.code.trim() !== '') ? formData.code.trim() : 'TEM-2026-001';
+    
     if (editingId) {
-      const updated = schools.map(s => s.id === editingId ? { ...formData, id: editingId } : s);
+      const updated = schools.map(s => s.id === editingId ? { ...formData, id: editingId, code: formattedCode, schoolCode: formattedCode } : s);
       await saveToDb(updated);
       toast.success('School updated successfully');
     } else {
       const schoolId = Date.now().toString();
-      const newSchool = { ...formData, id: schoolId };
+      const newSchool = { ...formData, id: schoolId, code: formattedCode, schoolCode: formattedCode };
 
       try {
         const defaultTemplates = getDefaultTemplates();
