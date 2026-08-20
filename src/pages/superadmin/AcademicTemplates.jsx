@@ -33,17 +33,17 @@ const AcademicTemplates = () => {
     { id: 'session-2025-2026', name: '2025-2026', academicSession: '2025-2026', isCurrent: false, status: 'Completed' }
   ]);
 
+  const [activeTab, setActiveTab] = useState('classes'); // 'classes' | 'sessions' | 'timetable'
+
   // Initialize defaults
   useEffect(() => {
     const saved = localStorage.getItem('superAdminAcademicTemplates');
-    if (saved) {
-      const parsed = JSON.parse(saved);
+    const parsed = saved ? JSON.parse(saved) : null;
+    if (parsed && Array.isArray(parsed) && parsed.length > 0) {
       setTemplates(parsed);
-      if (parsed.length > 0) {
-        setSelectedTemplateId(parsed[0].id);
-        if (parsed[0].classes.length > 0) {
-          setSelectedClassId(parsed[0].classes[0].id);
-        }
+      setSelectedTemplateId(parsed[0].id);
+      if (parsed[0].classes && parsed[0].classes.length > 0) {
+        setSelectedClassId(parsed[0].classes[0].id);
       }
     } else {
       // Build default pre-filled structure for Classes 1 to 10 with Sections A, B, C
@@ -476,62 +476,102 @@ const AcademicTemplates = () => {
             </div>
           </div>
 
+          {/* Navigation Tabs */}
+          <div className="flex border-b border-gray-200 bg-white px-4 pt-2 rounded-t-2xl shadow-xs space-x-2">
+            <button
+              onClick={() => setActiveTab('classes')}
+              className={`py-3 px-4 font-bold text-xs sm:text-sm border-b-2 transition-all flex items-center gap-2 ${
+                activeTab === 'classes'
+                  ? 'border-darkBlue text-darkBlue bg-slate-50/80 rounded-t-lg'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <BookOpen size={16} />
+              <span>Classes & Subjects</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('sessions')}
+              className={`py-3 px-4 font-bold text-xs sm:text-sm border-b-2 transition-all flex items-center gap-2 ${
+                activeTab === 'sessions'
+                  ? 'border-darkBlue text-darkBlue bg-slate-50/80 rounded-t-lg'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Layers size={16} />
+              <span>Academic Sessions</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('timetable')}
+              className={`py-3 px-4 font-bold text-xs sm:text-sm border-b-2 transition-all flex items-center gap-2 ${
+                activeTab === 'timetable'
+                  ? 'border-darkBlue text-darkBlue bg-slate-50/80 rounded-t-lg'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Grid size={16} />
+              <span>Academic Timetable Structure</span>
+            </button>
+          </div>
+
           {/* Quick Actions Panel */}
-          <div className="flex flex-wrap gap-3 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-            <button
-              onClick={() => {
-                setTemplateForm({ name: currentTemplate.name, status: currentTemplate.status });
-                setEditingTemplateId(currentTemplate.id);
-                setIsTemplateModalOpen(true);
-              }}
-              className="px-3.5 py-2 border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5"
-            >
-              <Settings2 size={14} />
-              <span>Edit Template Info</span>
-            </button>
-            <button
-              onClick={() => {
-                setClassForm({ name: '' });
-                setEditingClassId(null);
-                setIsClassModalOpen(true);
-              }}
-              className="px-3.5 py-2 border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5"
-            >
-              <Plus size={14} />
-              <span>Add Class</span>
-            </button>
-            {currentClass && (
+          {activeTab === 'classes' && (
+            <div className="flex flex-wrap gap-3 bg-white p-4 rounded-b-2xl border border-gray-100 shadow-sm">
               <button
                 onClick={() => {
-                  setClassForm({ name: currentClass.name });
-                  setEditingClassId(currentClass.id);
+                  setTemplateForm({ name: currentTemplate.name, status: currentTemplate.status });
+                  setEditingTemplateId(currentTemplate.id);
+                  setIsTemplateModalOpen(true);
+                }}
+                className="px-3.5 py-2 border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5"
+              >
+                <Settings2 size={14} />
+                <span>Edit Template Info</span>
+              </button>
+              <button
+                onClick={() => {
+                  setClassForm({ name: '' });
+                  setEditingClassId(null);
                   setIsClassModalOpen(true);
                 }}
                 className="px-3.5 py-2 border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5"
               >
-                <Edit size={14} />
-                <span>Rename Selected Class</span>
+                <Plus size={14} />
+                <span>Add Class</span>
               </button>
-            )}
-            {currentClass && (
+              {currentClass && (
+                <button
+                  onClick={() => {
+                    setClassForm({ name: currentClass.name });
+                    setEditingClassId(currentClass.id);
+                    setIsClassModalOpen(true);
+                  }}
+                  className="px-3.5 py-2 border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5"
+                >
+                  <Edit size={14} />
+                  <span>Rename Selected Class</span>
+                </button>
+              )}
+              {currentClass && (
+                <button
+                  onClick={() => deleteClass(currentClass.id)}
+                  className="px-3.5 py-2 border border-red-100 text-red-600 hover:bg-red-50 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5"
+                >
+                  <Trash2 size={14} />
+                  <span>Delete Selected Class</span>
+                </button>
+              )}
               <button
-                onClick={() => deleteClass(currentClass.id)}
-                className="px-3.5 py-2 border border-red-100 text-red-600 hover:bg-red-50 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5"
+                onClick={deleteTemplate}
+                className="w-full sm:w-auto sm:ml-auto px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shrink-0"
               >
                 <Trash2 size={14} />
-                <span>Delete Selected Class</span>
+                <span>Delete Entire Template</span>
               </button>
-            )}
-            <button
-              onClick={deleteTemplate}
-              className="w-full sm:w-auto sm:ml-auto px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shrink-0"
-            >
-              <Trash2 size={14} />
-              <span>Delete Entire Template</span>
-            </button>
-          </div>
+            </div>
+          )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {activeTab === 'classes' && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
             {/* Left Class Grid (4 columns) */}
             <div className="lg:col-span-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col h-[520px]">
               <div className="flex items-center gap-2 mb-4 border-b border-gray-100 pb-3">
@@ -719,6 +759,141 @@ const AcademicTemplates = () => {
               )}
             </div>
           </div>
+          )}
+
+          {/* Academic Sessions Tab Content */}
+          {activeTab === 'sessions' && (
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mt-6">
+              <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+                <div>
+                  <h3 className="font-bold text-gray-800 text-base flex items-center gap-2">
+                    <Layers className="text-darkBlue" size={18} />
+                    Predefined Academic Sessions
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-1">Master academic sessions automatically mapped to all newly created schools.</p>
+                </div>
+                <button
+                  onClick={() => {
+                    const newName = prompt('Enter new Academic Session (e.g. 2027-2028):');
+                    if (newName) {
+                      const updated = [...sessions, { id: `session-${Date.now()}`, name: newName, academicSession: newName, isCurrent: false, status: 'Active' }];
+                      setSessions(updated);
+                      toast.success(`Session ${newName} added.`);
+                    }
+                  }}
+                  className="bg-greenAccent hover:bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs"
+                >
+                  <Plus size={16} />
+                  <span>Add New Session</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {sessions.map((sess) => (
+                  <div key={sess.id} className={`p-4 rounded-xl border flex flex-col justify-between ${sess.isCurrent ? 'bg-emerald-50/60 border-emerald-300 shadow-xs' : 'bg-gray-50 border-gray-200'}`}>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-extrabold text-slate-800 text-base">{sess.name}</h4>
+                        <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full mt-1 ${sess.isCurrent ? 'bg-emerald-600 text-white' : 'bg-gray-200 text-gray-700'}`}>
+                          {sess.isCurrent ? 'Current Active Session' : sess.status}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const updated = sessions.map(s => ({ ...s, isCurrent: s.id === sess.id }));
+                          setSessions(updated);
+                          toast.success(`Active session set to ${sess.name}`);
+                        }}
+                        disabled={sess.isCurrent}
+                        className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-all ${sess.isCurrent ? 'bg-emerald-100 text-emerald-800 cursor-default' : 'bg-white border border-gray-300 hover:bg-gray-100 text-gray-700'}`}
+                      >
+                        {sess.isCurrent ? 'Active' : 'Set Active'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Academic Timetable Structure Tab Content */}
+          {activeTab === 'timetable' && (
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mt-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-gray-100 pb-4">
+                <div>
+                  <h3 className="font-bold text-gray-800 text-base flex items-center gap-2">
+                    <Grid className="text-darkBlue" size={18} />
+                    Master Predefined Timetable Structure
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-1">Predefined Monday to Friday period schedule automatically initialized for each class.</p>
+                </div>
+                
+                {/* Select Class for Timetable View */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-gray-600">Select Class:</span>
+                  <select
+                    value={selectedClassId}
+                    onChange={(e) => setSelectedClassId(e.target.value)}
+                    className="px-3 py-1.5 border border-gray-200 rounded-xl text-xs font-bold bg-gray-50 text-gray-800 outline-none"
+                  >
+                    {currentTemplate.classes.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Master Timetable Grid */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse border border-gray-200 rounded-xl overflow-hidden">
+                  <thead>
+                    <tr className="bg-darkBlue text-white text-xs font-bold">
+                      <th className="p-3 border-r border-blue-900 w-28">Period / Time</th>
+                      {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((day) => (
+                        <th key={day} className="p-3 border-r border-blue-900 text-center">{day}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="text-xs text-gray-700 divide-y divide-gray-200">
+                    {[
+                      { period: 'Period 1', time: '08:00 AM - 08:40 AM', defaultSub: 'English' },
+                      { period: 'Period 2', time: '08:40 AM - 09:20 AM', defaultSub: 'Urdu' },
+                      { period: 'Period 3', time: '09:20 AM - 10:00 AM', defaultSub: 'Mathematics' },
+                      { period: 'Period 4', time: '10:00 AM - 10:40 AM', defaultSub: 'General Science' },
+                      { period: 'Recess Break', time: '10:40 AM - 11:00 AM', defaultSub: 'Break', isBreak: true },
+                      { period: 'Period 5', time: '11:00 AM - 11:40 AM', defaultSub: 'Social Studies' },
+                      { period: 'Period 6', time: '11:40 AM - 12:20 PM', defaultSub: 'Computer Science' },
+                      { period: 'Period 7', time: '12:20 PM - 01:00 PM', defaultSub: 'Islamiat' },
+                    ].map((slot, idx) => (
+                      <tr key={idx} className={slot.isBreak ? 'bg-amber-50/70 font-bold' : 'hover:bg-gray-50'}>
+                        <td className="p-3 font-bold border-r border-gray-200 bg-gray-50">
+                          <div>{slot.period}</div>
+                          <div className="text-[10px] font-medium text-gray-500">{slot.time}</div>
+                        </td>
+                        {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((day) => {
+                          if (slot.isBreak) {
+                            return (
+                              <td key={day} className="p-3 text-center border-r border-gray-200 text-amber-700 font-bold bg-amber-50/50">
+                                Recess / Break
+                              </td>
+                            );
+                          }
+                          const classSubs = (currentClass?.groups ? currentGroup?.subjects : currentClass?.subjects) || [];
+                          const subName = classSubs[idx % Math.max(1, classSubs.length)]?.name || slot.defaultSub;
+                          return (
+                            <td key={day} className="p-3 text-center border-r border-gray-200 font-medium">
+                              <div className="font-bold text-darkBlue">{subName}</div>
+                              <div className="text-[10px] text-gray-400">Room {currentClass?.name || '1'}</div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </>
       ) : (
         <div className="bg-white p-12 rounded-2xl border border-gray-100 shadow-sm text-center text-gray-500">
