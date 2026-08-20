@@ -690,16 +690,16 @@ main.bg-gray-50,
   border-radius: 20px !important;
 }
 
-/* Force dark readable text in Light Mode */
-.stat-card-premium h3,
-.stat-card-premium .stat-number,
-.stat-card-premium [class*="text-2xl"],
-.stat-card-premium [class*="text-3xl"] {
+/* Force dark readable text in Light Mode on all mobile and desktop screens */
+:root:not([data-theme="dark"]) .stat-card-premium h3,
+:root:not([data-theme="dark"]) .stat-card-premium .stat-number,
+:root:not([data-theme="dark"]) .stat-card-premium [class*="text-2xl"],
+:root:not([data-theme="dark"]) .stat-card-premium [class*="text-3xl"] {
   color: #0f172a !important;
 }
 
-.stat-card-premium p,
-.stat-card-premium .stat-label {
+:root:not([data-theme="dark"]) .stat-card-premium p,
+:root:not([data-theme="dark"]) .stat-card-premium .stat-label {
   color: #334155 !important;
 }
 
