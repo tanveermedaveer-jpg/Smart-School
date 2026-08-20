@@ -143,14 +143,14 @@ const Dashboard = () => {
 
       {/* High Fidelity Performance Visual Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-100 dark:border-slate-800/80 min-h-[300px] sm:min-h-[320px] flex flex-col justify-between overflow-x-hidden">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 dark:border-slate-800 min-h-[300px] sm:min-h-[320px] flex flex-col justify-between overflow-x-hidden">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 sm:mb-6">
             <div>
-              <h3 className="text-sm sm:text-[16px] font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider">School Registration Trends</h3>
-              <p className="text-[11px] sm:text-xs text-slate-400 dark:text-slate-500 mt-0.5">Monthly overview of new schools registered on the platform</p>
+              <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">School Registration Trends</h3>
+              <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-0.5">Monthly overview of new schools registered on the platform</p>
             </div>
             <div className="flex space-x-2">
-              <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 rounded-lg text-xs font-bold font-mono">
+              <span className="px-3 py-1 bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 rounded-lg text-xs font-black font-mono border border-emerald-300 dark:border-emerald-800">
                 +18.4%
               </span>
             </div>
@@ -160,7 +160,7 @@ const Dashboard = () => {
             {[40, 55, 38, 70, 85, 60, 95, 80, 110, 90, 130, 145].map((val, i) => (
               <div key={i} className="flex-1 flex flex-col items-center group cursor-pointer relative h-full justify-end min-w-0">
                 <div 
-                  className="w-full bg-slate-50 dark:bg-slate-800/40 rounded-t-lg absolute bottom-0 left-0 right-0 h-full -z-0"
+                  className="w-full bg-slate-100 dark:bg-slate-800/40 rounded-t-lg absolute bottom-0 left-0 right-0 h-full -z-0"
                 />
                 <div 
                   className="w-full bg-gradient-to-t from-darkBlue to-greenAccent rounded-t-lg transition-all duration-500 ease-out z-10 group-hover:brightness-110"
@@ -168,11 +168,11 @@ const Dashboard = () => {
                 />
                 
                 {/* Custom Tooltip */}
-                <div className="absolute -top-7 bg-slate-850 dark:bg-slate-800 text-white text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none shadow font-mono font-bold">
+                <div className="absolute -top-7 bg-slate-900 dark:bg-slate-800 text-white text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none shadow font-mono font-bold">
                   {val}
                 </div>
                 
-                <span className="text-[8px] sm:text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-2 z-10 select-none uppercase tracking-tighter sm:tracking-normal text-center truncate max-w-full">
+                <span className="text-[8px] sm:text-[10px] font-black text-slate-700 dark:text-slate-300 mt-2 z-10 select-none uppercase tracking-tighter sm:tracking-normal text-center truncate max-w-full">
                   {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i]}
                 </span>
               </div>
@@ -180,41 +180,41 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-100 dark:border-slate-800/80 flex flex-col justify-between min-h-[300px] sm:min-h-[320px]">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col justify-between min-h-[300px] sm:min-h-[320px]">
           <div>
-            <h3 className="text-sm sm:text-[16px] font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider mb-1">System Diagnostics</h3>
-            <p className="text-[11px] sm:text-xs text-slate-400 dark:text-slate-500 mb-4 sm:mb-6">Real-time health status of cloud systems</p>
+            <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider mb-1">System Diagnostics</h3>
+            <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-4 sm:mb-6">Real-time health status of cloud systems</p>
             
             <div className="space-y-3 sm:space-y-4">
-              <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-950/30 rounded-xl border border-slate-100/50 dark:border-slate-800/30 gap-2">
+              <div className="flex items-center justify-between p-3.5 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 gap-2">
                 <div className="flex items-center space-x-2.5 sm:space-x-3">
-                  <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-sm shrink-0"></span>
-                  <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Auth Systems</span>
+                  <span className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse shadow-sm shrink-0"></span>
+                  <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white">Auth Systems</span>
                 </div>
-                <span className="text-[10px] sm:text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded-full uppercase shrink-0">Active</span>
+                <span className="text-xs font-extrabold text-white bg-emerald-600 px-3 py-0.5 rounded-full uppercase tracking-wider shrink-0 shadow-xs">Active</span>
               </div>
 
-              <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-950/30 rounded-xl border border-slate-100/50 dark:border-slate-800/30 gap-2">
+              <div className="flex items-center justify-between p-3.5 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 gap-2">
                 <div className="flex items-center space-x-2.5 sm:space-x-3">
-                  <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-sm shrink-0"></span>
-                  <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Firestore Cloud</span>
+                  <span className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse shadow-sm shrink-0"></span>
+                  <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white">Firestore Cloud</span>
                 </div>
-                <span className="text-[10px] sm:text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded-full uppercase shrink-0">Active</span>
+                <span className="text-xs font-extrabold text-white bg-emerald-600 px-3 py-0.5 rounded-full uppercase tracking-wider shrink-0 shadow-xs">Active</span>
               </div>
 
-              <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-950/30 rounded-xl border border-slate-100/50 dark:border-slate-800/30 gap-2">
+              <div className="flex items-center justify-between p-3.5 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 gap-2">
                 <div className="flex items-center space-x-2.5 sm:space-x-3">
-                  <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-sm shrink-0"></span>
-                  <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Storage Nodes</span>
+                  <span className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse shadow-sm shrink-0"></span>
+                  <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white">Storage Nodes</span>
                 </div>
-                <span className="text-[10px] sm:text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded-full uppercase shrink-0">Active</span>
+                <span className="text-xs font-extrabold text-white bg-emerald-600 px-3 py-0.5 rounded-full uppercase tracking-wider shrink-0 shadow-xs">Active</span>
               </div>
             </div>
           </div>
 
-          <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs text-slate-400 mt-4">
+          <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 mt-4">
             <span>Ping Response latency:</span>
-            <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded">24ms</span>
+            <span className="font-mono font-black text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-800 px-2.5 py-1 rounded-lg">24ms</span>
           </div>
         </div>
       </div>
@@ -222,29 +222,29 @@ const Dashboard = () => {
       {/* Recent Contact Messages & Demo Requests Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Contact Messages Overview */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-100 dark:border-slate-800/80">
-          <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
-            <h3 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
-              <Mail className="w-4 h-4 text-teal-600" />
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 dark:border-slate-800">
+          <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
+            <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
+              <Mail className="w-4.5 h-4.5 text-teal-600" />
               Contact Messages
             </h3>
-            <span className="text-xs font-bold text-teal-700 bg-teal-50 dark:bg-teal-950/30 px-2.5 py-1 rounded-full">
+            <span className="text-xs font-extrabold text-teal-800 bg-teal-100 dark:bg-teal-950/60 border border-teal-300 dark:border-teal-800 px-3 py-1 rounded-full">
               {stats.contactMessages} Total
             </span>
           </div>
 
           {recentContactMsgs.length === 0 ? (
-            <p className="text-xs text-slate-400 italic py-4 text-center">No contact messages received yet.</p>
+            <p className="text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 italic py-6 text-center">No contact messages received yet.</p>
           ) : (
             <div className="space-y-3">
               {recentContactMsgs.map((msg, idx) => (
-                <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-950/30 rounded-xl border border-slate-100 dark:border-slate-800/40">
+                <div key={idx} className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700">
                   <div className="flex justify-between items-start gap-2">
-                    <span className="font-bold text-xs text-darkBlue dark:text-teal-400 truncate">{msg.name}</span>
-                    <span className="text-[10px] text-slate-400 shrink-0">{msg.date ? new Date(msg.date).toLocaleDateString() : 'Recent'}</span>
+                    <span className="font-black text-xs sm:text-sm text-slate-900 dark:text-teal-400 truncate">{msg.name}</span>
+                    <span className="text-[10px] font-bold text-slate-500 shrink-0">{msg.date ? new Date(msg.date).toLocaleDateString() : 'Recent'}</span>
                   </div>
-                  <p className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 mt-1 truncate">{msg.subject || 'Inquiry'}</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">{msg.message}</p>
+                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-1 truncate">{msg.subject || 'Inquiry'}</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 line-clamp-2">{msg.message}</p>
                 </div>
               ))}
             </div>
@@ -252,29 +252,29 @@ const Dashboard = () => {
         </div>
 
         {/* Demo Requests Overview */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-100 dark:border-slate-800/80">
-          <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
-            <h3 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-orange-600" />
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 dark:border-slate-800">
+          <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
+            <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
+              <MessageSquare className="w-4.5 h-4.5 text-orange-600" />
               Demo Requests
             </h3>
-            <span className="text-xs font-bold text-orange-700 bg-orange-50 dark:bg-orange-950/30 px-2.5 py-1 rounded-full">
+            <span className="text-xs font-extrabold text-orange-800 bg-orange-100 dark:bg-orange-950/60 border border-orange-300 dark:border-orange-800 px-3 py-1 rounded-full">
               {stats.demoRequests} Total
             </span>
           </div>
 
           {recentDemoReqs.length === 0 ? (
-            <p className="text-xs text-slate-400 italic py-4 text-center">No demo requests received yet.</p>
+            <p className="text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 italic py-6 text-center">No demo requests received yet.</p>
           ) : (
             <div className="space-y-3">
               {recentDemoReqs.map((req, idx) => (
-                <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-950/30 rounded-xl border border-slate-100 dark:border-slate-800/40">
+                <div key={idx} className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700">
                   <div className="flex justify-between items-start gap-2">
-                    <span className="font-bold text-xs text-darkBlue dark:text-orange-400 truncate">{req.name}</span>
-                    <span className="text-[10px] text-slate-400 shrink-0">{req.date ? new Date(req.date).toLocaleDateString() : 'Recent'}</span>
+                    <span className="font-black text-xs sm:text-sm text-slate-900 dark:text-orange-400 truncate">{req.name}</span>
+                    <span className="text-[10px] font-bold text-slate-500 shrink-0">{req.date ? new Date(req.date).toLocaleDateString() : 'Recent'}</span>
                   </div>
-                  <p className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 mt-1 truncate">School: {req.schoolName}</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{req.email} • {req.phone}</p>
+                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-1 truncate">School: {req.schoolName}</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">{req.email} • {req.phone}</p>
                 </div>
               ))}
             </div>

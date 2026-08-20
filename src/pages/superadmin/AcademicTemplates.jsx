@@ -418,16 +418,16 @@ const AcademicTemplates = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3.5 bg-white p-4 sm:p-6 rounded-2xl border border-gray-100 shadow-sm">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Academic Templates</h2>
-          <p className="text-gray-500 text-sm mt-1">Configure global templates to quickly initialize newly registered schools.</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Academic Templates</h2>
+          <p className="text-gray-500 text-xs sm:text-sm mt-0.5 sm:mt-1">Configure global templates to quickly initialize newly registered schools.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto">
           <select
             value={selectedTemplateId}
             onChange={(e) => setSelectedTemplateId(e.target.value)}
-            className="px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-greenAccent/20 focus:border-greenAccent outline-none bg-white text-sm font-medium text-gray-700"
+            className="w-full sm:w-auto max-w-full truncate px-3.5 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-greenAccent/20 focus:border-greenAccent outline-none bg-white text-xs sm:text-sm font-bold text-gray-700"
           >
             {templates.map(t => (
               <option key={t.id} value={t.id}>{t.name}</option>
@@ -439,7 +439,7 @@ const AcademicTemplates = () => {
               setEditingTemplateId(null);
               setIsTemplateModalOpen(true);
             }}
-            className="bg-greenAccent hover:bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors flex items-center space-x-2 shadow-sm"
+            className="w-full sm:w-auto bg-greenAccent hover:bg-green-600 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-colors flex items-center justify-center space-x-2 shadow-sm shrink-0"
           >
             <Plus size={16} />
             <span>New Template</span>
@@ -450,79 +450,79 @@ const AcademicTemplates = () => {
       {currentTemplate ? (
         <>
           {/* Template Info Card */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-between">
-              <span className="text-xs font-semibold text-gray-400 uppercase">Template Name</span>
-              <span className="text-sm font-bold text-gray-800 mt-2 truncate">{currentTemplate.name}</span>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div className="col-span-2 sm:col-span-1 bg-white p-3.5 sm:p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-between">
+              <span className="text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-wider">Template Name</span>
+              <span className="text-xs sm:text-sm font-extrabold text-gray-800 mt-1 break-words">{currentTemplate.name}</span>
             </div>
-            <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-between">
-              <span className="text-xs font-semibold text-gray-400 uppercase">Status</span>
-              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold mt-2 w-max ${currentTemplate.status === 'Active' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+            <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-between">
+              <span className="text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</span>
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold mt-1 w-max ${currentTemplate.status === 'Active' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
                 {currentTemplate.status === 'Active' ? <CheckCircle size={12} /> : <XCircle size={12} />}
                 {currentTemplate.status}
               </span>
             </div>
-            <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-between">
-              <span className="text-xs font-semibold text-gray-400 uppercase">Total Classes</span>
-              <span className="text-xl font-black text-darkBlue mt-2">{totalClasses}</span>
+            <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-between">
+              <span className="text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Classes</span>
+              <span className="text-lg sm:text-xl font-black text-darkBlue mt-1">{totalClasses}</span>
             </div>
-            <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-between">
-              <span className="text-xs font-semibold text-gray-400 uppercase">Total Subjects</span>
-              <span className="text-xl font-black text-darkBlue mt-2">{totalSubjects}</span>
+            <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-between">
+              <span className="text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Subjects</span>
+              <span className="text-lg sm:text-xl font-black text-darkBlue mt-1">{totalSubjects}</span>
             </div>
-            <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-between">
-              <span className="text-xs font-semibold text-gray-400 uppercase">Total Groups</span>
-              <span className="text-xl font-black text-darkBlue mt-2">{totalGroups}</span>
+            <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-between">
+              <span className="text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Groups</span>
+              <span className="text-lg sm:text-xl font-black text-darkBlue mt-1">{totalGroups}</span>
             </div>
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex border-b border-gray-200 bg-white px-4 pt-2 rounded-t-2xl shadow-xs space-x-2">
+          <div className="flex border-b border-gray-200 bg-white px-2 sm:px-4 pt-2 rounded-t-2xl shadow-xs space-x-1 sm:space-x-2 overflow-x-auto whitespace-nowrap scrollbar-none">
             <button
               onClick={() => setActiveTab('classes')}
-              className={`py-3 px-4 font-bold text-xs sm:text-sm border-b-2 transition-all flex items-center gap-2 ${
+              className={`py-2.5 px-3 sm:px-4 font-bold text-xs sm:text-sm border-b-2 transition-all flex items-center gap-1.5 shrink-0 ${
                 activeTab === 'classes'
                   ? 'border-darkBlue text-darkBlue bg-slate-50/80 rounded-t-lg'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
-              <BookOpen size={16} />
+              <BookOpen size={15} />
               <span>Classes & Subjects</span>
             </button>
             <button
               onClick={() => setActiveTab('sessions')}
-              className={`py-3 px-4 font-bold text-xs sm:text-sm border-b-2 transition-all flex items-center gap-2 ${
+              className={`py-2.5 px-3 sm:px-4 font-bold text-xs sm:text-sm border-b-2 transition-all flex items-center gap-1.5 shrink-0 ${
                 activeTab === 'sessions'
                   ? 'border-darkBlue text-darkBlue bg-slate-50/80 rounded-t-lg'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
-              <Layers size={16} />
+              <Layers size={15} />
               <span>Academic Sessions</span>
             </button>
             <button
               onClick={() => setActiveTab('timetable')}
-              className={`py-3 px-4 font-bold text-xs sm:text-sm border-b-2 transition-all flex items-center gap-2 ${
+              className={`py-2.5 px-3 sm:px-4 font-bold text-xs sm:text-sm border-b-2 transition-all flex items-center gap-1.5 shrink-0 ${
                 activeTab === 'timetable'
                   ? 'border-darkBlue text-darkBlue bg-slate-50/80 rounded-t-lg'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
-              <Grid size={16} />
+              <Grid size={15} />
               <span>Academic Timetable Structure</span>
             </button>
           </div>
 
           {/* Quick Actions Panel */}
           {activeTab === 'classes' && (
-            <div className="flex flex-wrap gap-3 bg-white p-4 rounded-b-2xl border border-gray-100 shadow-sm">
+            <div className="flex flex-wrap gap-2 sm:gap-3 bg-white p-3.5 sm:p-4 rounded-b-2xl border border-gray-100 shadow-sm">
               <button
                 onClick={() => {
                   setTemplateForm({ name: currentTemplate.name, status: currentTemplate.status });
                   setEditingTemplateId(currentTemplate.id);
                   setIsTemplateModalOpen(true);
                 }}
-                className="px-3.5 py-2 border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5"
+                className="w-full sm:w-auto px-3.5 py-2 border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-xl text-xs font-semibold transition-all inline-flex items-center justify-center gap-1.5 shrink-0"
               >
                 <Settings2 size={14} />
                 <span>Edit Template Info</span>
@@ -533,7 +533,7 @@ const AcademicTemplates = () => {
                   setEditingClassId(null);
                   setIsClassModalOpen(true);
                 }}
-                className="px-3.5 py-2 border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5"
+                className="w-full sm:w-auto px-3.5 py-2 border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-xl text-xs font-semibold transition-all inline-flex items-center justify-center gap-1.5 shrink-0"
               >
                 <Plus size={14} />
                 <span>Add Class</span>
