@@ -263,26 +263,30 @@ const Schools = () => {
                 });
               });
             } else {
-              // Normal Classes 1-8
-              const classId = `class-${schoolId}-${cls.id}`;
-              copiedClasses.push({
-                id: classId,
-                className: cls.name,
-                section: 'A',
-                capacity: '50',
-                classTeacherId: '',
-                schoolId: schoolId
-              });
+              // Normal Classes 1-8: Create Sections A, B, and C
+              const targetSections = cls.sections || ['Section A', 'Section B', 'Section C'];
+              targetSections.forEach((secName, secIdx) => {
+                const cleanSec = secName.replace('Section ', '');
+                const classId = `class-${schoolId}-${cls.id}-${cleanSec}`;
+                copiedClasses.push({
+                  id: classId,
+                  className: cls.name,
+                  section: cleanSec,
+                  capacity: '50',
+                  classTeacherId: '',
+                  schoolId: schoolId
+                });
 
-              (cls.subjects || []).forEach((sub) => {
-                copiedSubjects.push({
-                  id: `sub-${schoolId}-${sub.id}`,
-                  subjectName: sub.name,
-                  subjectCode: sub.code,
-                  classId: classId,
-                  teacherId: '',
-                  schoolId: schoolId,
-                  enabled: sub.enabled !== false
+                (cls.subjects || []).forEach((sub) => {
+                  copiedSubjects.push({
+                    id: `sub-${schoolId}-${sub.id}-${cleanSec}`,
+                    subjectName: sub.name,
+                    subjectCode: `${sub.code}-${cleanSec}`,
+                    classId: classId,
+                    teacherId: '',
+                    schoolId: schoolId,
+                    enabled: sub.enabled !== false
+                  });
                 });
               });
             }

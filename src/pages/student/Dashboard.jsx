@@ -240,7 +240,7 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       <ProfileHeaderCard 
         name={authUser.name || 'Student'}
         role="Student"
@@ -253,22 +253,22 @@ const Dashboard = () => {
         ]}
       />
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-2">
         <div>
-          <h2 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Student Dashboard</h2>
-          <p className="text-slate-400 font-medium text-xs mt-1.5">Welcome back, {authUser.name}</p>
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Student Dashboard</h2>
+          <p className="text-slate-400 font-medium text-xs mt-1">Welcome back, {authUser.name}</p>
         </div>
         
         <button
           onClick={() => setShowScanner(true)}
-          className="bg-greenAccent hover:bg-emerald-600 text-white font-bold py-2.5 px-5 rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center space-x-2 text-sm shrink-0"
+          className="w-full sm:w-auto bg-greenAccent hover:bg-emerald-600 text-white font-bold py-2.5 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center space-x-2 text-xs sm:text-sm shrink-0"
         >
-          <QrCode size={18} />
+          <QrCode size={16} />
           <span>Scan QR Attendance</span>
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-6">
         {statCards.map((stat, index) => {
           const cardTypeClass = 
             index === 0 ? 'stat-card-premium-teachers' :
@@ -276,12 +276,12 @@ const Dashboard = () => {
             index === 2 ? 'stat-card-premium-students' :
             'stat-card-premium-demo';
           return (
-            <div key={index} className={`stat-card-premium ${cardTypeClass} bg-white dark:bg-slate-900 p-6 rounded-2xl flex items-start justify-between border border-slate-100 dark:border-slate-800/80`}>
+            <div key={index} className={`stat-card-premium ${cardTypeClass} bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl flex items-start justify-between border border-slate-100 dark:border-slate-800/80`}>
               <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">{stat.title}</p>
-                <h3 className="text-3xl font-extrabold text-slate-800 dark:text-white leading-tight">{stat.value}</h3>
+                <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{stat.title}</p>
+                <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-white leading-tight">{stat.value}</h3>
               </div>
-              <div className={`p-2.5 rounded-xl shadow-sm ${stat.color} dark:bg-slate-800/40 dark:text-slate-200 inline-flex`}>
+              <div className={`p-2 sm:p-2.5 rounded-xl shadow-sm ${stat.color} dark:bg-slate-800/40 dark:text-slate-200 inline-flex shrink-0`}>
                 {stat.icon}
               </div>
             </div>

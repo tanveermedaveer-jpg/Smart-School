@@ -27,6 +27,12 @@ const AcademicTemplates = () => {
   const [subjectForm, setSubjectForm] = useState({ name: '', code: '', enabled: true });
   const [editingSubjectId, setEditingSubjectId] = useState(null);
 
+  // Predefined Academic Sessions
+  const [sessions, setSessions] = useState([
+    { id: 'session-2026-2027', name: '2026-2027', academicSession: '2026-2027', isCurrent: true, status: 'Active' },
+    { id: 'session-2025-2026', name: '2025-2026', academicSession: '2025-2026', isCurrent: false, status: 'Completed' }
+  ]);
+
   // Initialize defaults
   useEffect(() => {
     const saved = localStorage.getItem('superAdminAcademicTemplates');
@@ -40,7 +46,7 @@ const AcademicTemplates = () => {
         }
       }
     } else {
-      // Default structure
+      // Build default pre-filled structure for Classes 1 to 10 with Sections A, B, C
       const defaultClasses = [];
       const commonLowerSubjects = [
         { name: 'English', code: 'ENG' },
@@ -63,9 +69,8 @@ const AcademicTemplates = () => {
         { name: 'English', code: 'ENG' },
         { name: 'Urdu', code: 'URD' },
         { name: 'Mathematics', code: 'MTH' },
-        { name: 'Science', code: 'SCI' },
-        { name: 'History', code: 'HIS' },
-        { name: 'Geography', code: 'GEO' },
+        { name: 'General Science', code: 'SCI' },
+        { name: 'History & Geography', code: 'SST' },
         { name: 'Computer Science', code: 'CS' },
         { name: 'Islamiat', code: 'ISL' }
       ];
@@ -92,24 +97,39 @@ const AcademicTemplates = () => {
         { name: 'Pakistan Studies', code: 'PST' }
       ];
 
+      const arts910 = [
+        { name: 'English', code: 'ENG' },
+        { name: 'Urdu', code: 'URD' },
+        { name: 'General Mathematics', code: 'GMTH' },
+        { name: 'General Science', code: 'GSCI' },
+        { name: 'Civics & Economics', code: 'CIV' },
+        { name: 'Islamiat', code: 'ISL' },
+        { name: 'Pakistan Studies', code: 'PST' }
+      ];
+
+      const sections = ['Section A', 'Section B', 'Section C'];
+
       for (let i = 1; i <= 10; i++) {
         const clsId = `class-${i}`;
         if (i < 4) {
           defaultClasses.push({
             id: clsId,
             name: `Class ${i}`,
+            sections: sections,
             subjects: commonLowerSubjects.map((s, idx) => ({ id: `sub-${i}-${idx}`, name: s.name, code: `${s.code}-0${i}`, enabled: true }))
           });
         } else if (i === 4 || i === 5) {
           defaultClasses.push({
             id: clsId,
             name: `Class ${i}`,
+            sections: sections,
             subjects: commonMidSubjects.map((s, idx) => ({ id: `sub-${i}-${idx}`, name: s.name, code: `${s.code}-0${i}`, enabled: true }))
           });
         } else if (i >= 6 && i <= 8) {
           defaultClasses.push({
             id: clsId,
             name: `Class ${i}`,
+            sections: sections,
             subjects: commonUpperSubjects.map((s, idx) => ({ id: `sub-${i}-${idx}`, name: s.name, code: `${s.code}-0${i}`, enabled: true }))
           });
         } else {
@@ -117,16 +137,22 @@ const AcademicTemplates = () => {
           defaultClasses.push({
             id: clsId,
             name: `Class ${i}`,
+            sections: sections,
             groups: [
               {
                 id: `group-sci-${i}`,
-                name: 'Science Group',
+                name: 'Section A (Science Group)',
                 subjects: science910.map((s, idx) => ({ id: `sub-${i}-sci-${idx}`, name: s.name, code: `${s.code}-${i}`, enabled: true }))
               },
               {
                 id: `group-cs-${i}`,
-                name: 'Computer Science Group',
+                name: 'Section B (Computer Science Group)',
                 subjects: cs910.map((s, idx) => ({ id: `sub-${i}-cs-${idx}`, name: s.name, code: `${s.code}-${i}`, enabled: true }))
+              },
+              {
+                id: `group-arts-${i}`,
+                name: 'Section C (General Arts Group)',
+                subjects: arts910.map((s, idx) => ({ id: `sub-${i}-arts-${idx}`, name: s.name, code: `${s.code}-${i}`, enabled: true }))
               }
             ]
           });
@@ -136,8 +162,12 @@ const AcademicTemplates = () => {
       const defaultTemplates = [
         {
           id: 'pakistan-school-template',
-          name: 'Pakistan School Template',
+          name: 'Pakistan School Template (Classes 1-10)',
           status: 'Active',
+          sessions: [
+            { id: 'session-2026-2027', name: '2026-2027', academicSession: '2026-2027', isCurrent: true, status: 'Active' },
+            { id: 'session-2025-2026', name: '2025-2026', academicSession: '2025-2026', isCurrent: false, status: 'Completed' }
+          ],
           classes: defaultClasses
         }
       ];
