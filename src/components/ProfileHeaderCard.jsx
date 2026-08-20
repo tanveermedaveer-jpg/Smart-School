@@ -134,32 +134,32 @@ const ProfileHeaderCard = ({ name, role, status = 'Active', details = [] }) => {
 
   const getIconForLabel = (label) => {
     const l = label.toLowerCase();
-    if (l.includes('email')) return <Mail size={14} className="text-slate-400 shrink-0" />;
-    if (l.includes('phone')) return <Phone size={14} className="text-slate-400 shrink-0" />;
-    if (l.includes('school name') || l.includes('school')) return <Building2 size={14} className="text-slate-400 shrink-0" />;
-    if (l.includes('code')) return <Hash size={14} className="text-slate-400 shrink-0" />;
+    if (l.includes('email')) return <Mail size={14} className="text-darkBlue dark:text-emerald-400 shrink-0" />;
+    if (l.includes('phone')) return <Phone size={14} className="text-darkBlue dark:text-emerald-400 shrink-0" />;
+    if (l.includes('school name') || l.includes('school')) return <Building2 size={14} className="text-darkBlue dark:text-emerald-400 shrink-0" />;
+    if (l.includes('code')) return <Hash size={14} className="text-darkBlue dark:text-emerald-400 shrink-0" />;
     return null;
   };
 
   return (
-    <div className="profile-card-premium rounded-2xl overflow-hidden mb-8 flex flex-col md:flex-row items-center p-6 md:p-8 space-y-6 md:space-y-0 md:space-x-8">
+    <div className="profile-card-premium rounded-2xl overflow-hidden mb-8 flex flex-col md:flex-row items-center p-5 sm:p-6 md:p-8 space-y-6 md:space-y-0 md:space-x-8">
       
       {/* Avatar Section */}
       <div className="shrink-0 flex flex-col items-center">
         <div className="relative group">
           <div 
             onClick={handleAvatarClick}
-            className="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-4 border-white shadow-md bg-white flex items-center justify-center cursor-pointer relative"
+            className="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-4 border-white dark:border-slate-800 shadow-md bg-white flex items-center justify-center cursor-pointer relative"
           >
             {avatar ? (
               <img src={avatar} alt="Profile" className="w-full h-full object-cover animate-fade-in" />
             ) : (
-              <div className="w-full h-full bg-slate-100 flex items-center justify-center">
-                <UserIcon size={40} className="text-slate-400" />
+              <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                <UserIcon size={40} className="text-slate-400 dark:text-slate-300" />
               </div>
             )}
             {status === 'Active' && (
-              <div className="absolute bottom-1 right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full shadow-sm"></div>
+              <div className="absolute bottom-1 right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white dark:border-slate-800 rounded-full shadow-sm"></div>
             )}
           </div>
           
@@ -198,13 +198,13 @@ const ProfileHeaderCard = ({ name, role, status = 'Active', details = [] }) => {
       <div className="flex-1 text-center md:text-left w-full">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
           <div>
-            <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800 leading-tight">{name}</h2>
-            <div className="flex items-center justify-center md:justify-start mt-2.5 space-x-3">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white leading-tight break-words">{name}</h2>
+            <div className="flex items-center justify-center md:justify-start mt-2.5 space-x-2.5 flex-wrap gap-y-1.5">
               <span className="px-3.5 py-1 bg-darkBlue text-white text-xs font-bold rounded-full uppercase tracking-wider shadow-sm">
                 {role}
               </span>
-              <span className="flex items-center text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
-                <CheckCircle size={12} className="mr-1" />
+              <span className="flex items-center text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
+                <CheckCircle size={12} className="mr-1 shrink-0" />
                 {status}
               </span>
             </div>
@@ -212,14 +212,14 @@ const ProfileHeaderCard = ({ name, role, status = 'Active', details = [] }) => {
         </div>
 
         {/* Dynamic Details Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-5 border-t border-slate-200/60">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-5 border-t border-slate-200/80 dark:border-white/10">
           {details.map((detail, idx) => (
-            <div key={idx} className="flex flex-col bg-white/40 dark:bg-black/10 p-3.5 rounded-xl border border-slate-100 dark:border-white/5 shadow-sm">
+            <div key={idx} className="flex flex-col bg-slate-50/90 dark:bg-slate-900/60 p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-800 shadow-xs">
               <div className="flex items-center space-x-1.5">
                 {getIconForLabel(detail.label)}
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{detail.label}</span>
+                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-300 uppercase tracking-wider">{detail.label}</span>
               </div>
-              <span className="text-[15px] font-bold text-slate-700 dark:text-slate-200 mt-2 break-words">{detail.value}</span>
+              <span className="text-sm sm:text-[15px] font-extrabold text-slate-800 dark:text-slate-100 mt-1.5 break-all sm:break-words leading-snug">{detail.value}</span>
             </div>
           ))}
         </div>

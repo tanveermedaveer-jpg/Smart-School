@@ -494,7 +494,7 @@ const AcademicTemplates = () => {
             )}
             <button
               onClick={deleteTemplate}
-              className="ml-auto px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5"
+              className="w-full sm:w-auto sm:ml-auto px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shrink-0"
             >
               <Trash2 size={14} />
               <span>Delete Entire Template</span>
@@ -645,31 +645,33 @@ const AcademicTemplates = () => {
                                   {sub.enabled ? 'Enabled' : 'Disabled'}
                                 </span>
                               </td>
-                              <td className="p-3 text-right space-x-1.5">
-                                <button
-                                  onClick={() => toggleSubjectStatus(sub.id)}
-                                  className={`text-[10px] font-bold px-2 py-1 rounded-lg transition-all ${
-                                    sub.enabled ? 'bg-red-50 hover:bg-red-100 text-red-600' : 'bg-green-50 hover:bg-green-100 text-green-700'
-                                  }`}
-                                >
-                                  {sub.enabled ? 'Disable' : 'Enable'}
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setSubjectForm({ name: sub.name, code: sub.code, enabled: sub.enabled });
-                                    setEditingSubjectId(sub.id);
-                                    setIsSubjectModalOpen(true);
-                                  }}
-                                  className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all inline-flex"
-                                >
-                                  <Edit size={14} />
-                                </button>
-                                <button
-                                  onClick={() => deleteSubject(sub.id)}
-                                  className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-all inline-flex"
-                                >
-                                  <Trash2 size={14} />
-                                </button>
+                              <td className="p-3 text-right">
+                                <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                                  <button
+                                    onClick={() => toggleSubjectStatus(sub.id)}
+                                    className={`text-[10px] font-bold px-2 py-1 rounded-lg transition-all shrink-0 ${
+                                      sub.enabled ? 'bg-red-50 hover:bg-red-100 text-red-600' : 'bg-green-50 hover:bg-green-100 text-green-700'
+                                    }`}
+                                  >
+                                    {sub.enabled ? 'Disable' : 'Enable'}
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setSubjectForm({ name: sub.name, code: sub.code, enabled: sub.enabled });
+                                      setEditingSubjectId(sub.id);
+                                      setIsSubjectModalOpen(true);
+                                    }}
+                                    className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all inline-flex shrink-0"
+                                  >
+                                    <Edit size={14} />
+                                  </button>
+                                  <button
+                                    onClick={() => deleteSubject(sub.id)}
+                                    className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-all inline-flex shrink-0"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           ))}

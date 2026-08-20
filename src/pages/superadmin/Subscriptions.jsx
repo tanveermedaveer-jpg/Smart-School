@@ -73,9 +73,9 @@ const Subscriptions = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Subscriptions & Plans</h2>
-        <button onClick={() => openModal()} className="bg-greenAccent hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 shadow-sm">
+        <button onClick={() => openModal()} className="w-full sm:w-auto bg-greenAccent hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 shadow-sm text-xs sm:text-sm shrink-0">
           <Plus size={20} />
           <span>Add New Plan</span>
         </button>
@@ -84,9 +84,9 @@ const Subscriptions = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {plans.map((plan) => (
           <div key={plan.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 relative flex flex-col">
-            <div className="absolute top-4 right-4 flex space-x-1">
-              <button onClick={() => openModal(plan)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"><Edit size={14}/></button>
-              <button onClick={() => handleDelete(plan.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors"><Trash2 size={14}/></button>
+            <div className="absolute top-4 right-4 flex items-center gap-1.5 shrink-0">
+              <button onClick={() => openModal(plan)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors shrink-0"><Edit size={14}/></button>
+              <button onClick={() => handleDelete(plan.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors shrink-0"><Trash2 size={14}/></button>
             </div>
             
             <h3 className="text-xl font-bold text-darkBlue mb-2">{plan.name}</h3>

@@ -207,9 +207,33 @@ const Schools = () => {
           ? (templates.find(t => t.id === (formData.templateId || 'pakistan-school-template')) || templates[0])
           : defaultTemplates[0];
 
-        // 1. Copy template classes and subjects to this school namespace
+        // 1. Copy template classes, subjects, sessions, and timetable structure to this school namespace
         const copiedClasses = [];
         const copiedSubjects = [];
+        const copiedSessions = [
+          {
+            id: `session-2026-2027-${schoolId}`,
+            academicSession: '2026-2027',
+            name: '2026-2027',
+            isCurrent: true,
+            status: 'Active',
+            schoolId: schoolId
+          }
+        ];
+        const copiedTimetable = {};
+
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        const periods = ['1', '2', '3', '4', 'Break', '5', '6', '7'];
+        const periodTimeMap = {
+          '1': { startTime: '08:00 AM', endTime: '08:40 AM' },
+          '2': { startTime: '08:40 AM', endTime: '09:20 AM' },
+          '3': { startTime: '09:20 AM', endTime: '10:00 AM' },
+          '4': { startTime: '10:00 AM', endTime: '10:40 AM' },
+          'Break': { startTime: '10:40 AM', endTime: '11:00 AM' },
+          '5': { startTime: '11:00 AM', endTime: '11:40 AM' },
+          '6': { startTime: '11:40 AM', endTime: '12:20 PM' },
+          '7': { startTime: '12:20 PM', endTime: '01:00 PM' }
+        };
 
         if (selectedTemplate && selectedTemplate.classes) {
           selectedTemplate.classes.forEach((cls) => {
@@ -265,13 +289,53 @@ const Schools = () => {
           });
         }
 
-        // Write classes and subjects to Firestore
+        // Build pre-populated Timetable structure for each created class
+        copiedClasses.forEach((cls) => {
+          const classSubs = copiedSubjects.filter(s => s.classId === cls.id && s.enabled !== false);
+          if (classSubs.length > 0) {
+            copiedTimetable[cls.id] = {};
+            let subTracker = 0;
+            days.forEach((day) => {
+              copiedTimetable[cls.id][day] = {};
+              periods.forEach((period) => {
+                if (period === 'Break') return;
+                const sub = classSubs[subTracker % classSubs.length];
+                subTracker++;
+                if (sub) {
+                  copiedTimetable[cls.id][day][period] = {
+                    schoolId: schoolId,
+                    classId: cls.id,
+                    className: `${cls.className}-${cls.section}`,
+                    subjectId: sub.id,
+                    subjectName: sub.subjectName,
+                    teacherId: '',
+                    teacherName: 'TBA',
+                    day: day,
+                    period: period,
+                    startTime: periodTimeMap[period]?.startTime || '',
+                    endTime: periodTimeMap[period]?.endTime || '',
+                    room: `Room ${cls.className}`
+                  };
+                }
+              });
+            });
+          }
+        });
+
+        // Write classes, subjects, sessions, and timetable to Firestore & localStorage
         if (copiedClasses.length > 0) {
           try {
             await saveClasses(schoolId, copiedClasses);
             await saveCollection('schoolAdminSubjects', schoolId, copiedSubjects);
+            await saveCollection('schoolAdminSessions', schoolId, copiedSessions);
+            await saveCollection('schoolAdminTimetable', schoolId, copiedTimetable);
+
+            localStorage.setItem('schoolAdminClasses', JSON.stringify(copiedClasses));
+            localStorage.setItem('schoolAdminSubjects', JSON.stringify(copiedSubjects));
+            localStorage.setItem('schoolAdminSessions', JSON.stringify(copiedSessions));
+            localStorage.setItem('schoolAdminTimetable', JSON.stringify(copiedTimetable));
           } catch (templateErr) {
-            console.warn('[Classes/Subjects Init Warning]', templateErr);
+            console.warn('[Academic Structure Init Warning]', templateErr);
           }
         }
 
@@ -390,16 +454,18 @@ const Schools = () => {
                         {school.admissionsEnabled ? 'Enabled' : 'Disabled'}
                       </span>
                     </td>
-                    <td className="p-4 text-right space-x-2 text-nowrap whitespace-nowrap">
-                      <button onClick={() => handleInspectLogs(school)} className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors inline-flex" title="Inspect Logs">
-                        <ScrollText size={16} />
-                      </button>
-                      <button onClick={() => openModal(school)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors inline-flex" title="Edit School">
-                        <Edit size={16} />
-                      </button>
-                      <button onClick={() => handleDelete(school.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors inline-flex" title="Delete School">
-                        <Trash2 size={16} />
-                      </button>
+                    <td className="p-4 text-right">
+                      <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                        <button onClick={() => handleInspectLogs(school)} className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors inline-flex shrink-0" title="Inspect Logs">
+                          <ScrollText size={16} />
+                        </button>
+                        <button onClick={() => openModal(school)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors inline-flex shrink-0" title="Edit School">
+                          <Edit size={16} />
+                        </button>
+                        <button onClick={() => handleDelete(school.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors inline-flex shrink-0" title="Delete School">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -221,16 +221,18 @@ const SchoolAdmins = () => {
                         {user.status}
                       </span>
                     </td>
-                    <td className="p-4 text-right space-x-2">
-                      <button onClick={() => openModal(user)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors inline-flex" title="Edit">
-                        <Edit size={16} />
-                      </button>
-                      <button onClick={() => openResetModal(user.id)} className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors inline-flex" title="Reset Password">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                      </button>
-                      <button onClick={() => handleDelete(user.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors inline-flex" title="Delete">
-                        <Trash2 size={16} />
-                      </button>
+                    <td className="p-4 text-right">
+                      <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                        <button onClick={() => openModal(user)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors inline-flex shrink-0" title="Edit">
+                          <Edit size={16} />
+                        </button>
+                        <button onClick={() => openResetModal(user.id)} className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors inline-flex shrink-0" title="Reset Password">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        </button>
+                        <button onClick={() => handleDelete(user.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors inline-flex shrink-0" title="Delete">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
