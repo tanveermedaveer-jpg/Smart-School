@@ -155,12 +155,12 @@ const Dashboard = () => {
             index === 2 ? 'stat-card-premium-students' :
             'stat-card-premium-demo';
           return (
-            <div key={index} className={`stat-card-premium ${cardTypeClass} bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl flex items-start justify-between border border-slate-100 dark:border-slate-800/80`}>
+            <div key={index} className={`stat-card-premium ${cardTypeClass} bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl flex items-start justify-between border border-slate-200 dark:border-slate-800`}>
               <div>
-                <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{stat.title}</p>
-                <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-white leading-tight">{stat.value}</h3>
+                <p className="text-xs font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">{stat.title}</p>
+                <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white leading-tight">{stat.value}</h3>
               </div>
-              <div className={`p-2 sm:p-2.5 rounded-xl shadow-sm ${stat.color} dark:bg-slate-800/40 dark:text-slate-200 inline-flex shrink-0`}>
+              <div className={`p-2.5 rounded-xl shadow-sm ${stat.color} dark:bg-slate-800/60 dark:text-slate-100 inline-flex shrink-0 border border-slate-200/60 dark:border-slate-700`}>
                 {stat.icon}
               </div>
             </div>
@@ -169,24 +169,24 @@ const Dashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800/80 shadow-sm p-6 min-h-[300px] flex flex-col justify-between">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 min-h-[300px] flex flex-col justify-between">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-[16px] font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider flex items-center"><Bell className="mr-2.5 text-orange-500" size={18}/> Recent Notices</h3>
+            <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider flex items-center"><Bell className="mr-2.5 text-orange-600" size={20}/> Recent Notices</h3>
           </div>
           <div className="space-y-4 flex-1 overflow-y-auto">
             {recentNotices.length > 0 ? recentNotices.map((notice, idx) => (
-              <div key={idx} className={`p-4 border-l-4 rounded-r-2xl shadow-sm ${notice.isGlobal ? 'border-purple-450 bg-purple-50/10 dark:bg-purple-950/10' : 'border-orange-400 bg-orange-50/10 dark:bg-orange-950/10'}`}>
+              <div key={idx} className={`p-4 border-l-4 rounded-r-2xl shadow-xs ${notice.isGlobal ? 'border-purple-600 bg-purple-50 dark:bg-purple-950/20' : 'border-orange-500 bg-orange-50 dark:bg-orange-950/20'}`}>
                 <div className="flex justify-between items-start">
-                  <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">{notice.title}</h4>
-                  {notice.isGlobal && <span className="text-[11px] font-bold text-purple-600 bg-purple-100 dark:bg-purple-900/40 px-2 py-0.5 rounded-full ml-2 shrink-0">System</span>}
+                  <h4 className="text-sm font-black text-slate-900 dark:text-slate-100">{notice.title}</h4>
+                  {notice.isGlobal && <span className="text-[11px] font-black text-purple-800 bg-purple-100 dark:bg-purple-900/60 px-2 py-0.5 rounded-full ml-2 shrink-0">System</span>}
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-450 mt-2 leading-relaxed line-clamp-2">{notice.content || notice.message}</p>
-                <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-                  <span className="text-xs font-medium text-slate-400 dark:text-slate-500">{notice.date}</span>
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 mt-2 leading-relaxed line-clamp-2">{notice.content || notice.message}</p>
+                <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+                  <span className="text-xs font-bold text-slate-600 dark:text-slate-400">{notice.date}</span>
                 </div>
               </div>
             )) : (
-              <div className="text-center py-8 text-slate-400 text-sm font-medium">No new notices found.</div>
+              <div className="text-center py-8 text-slate-600 dark:text-slate-400 text-sm font-bold italic">No new notices found.</div>
             )}
           </div>
         </div>

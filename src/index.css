@@ -682,22 +682,36 @@ main.bg-gray-50,
 /* --- Premium Stat Cards (Light / Dark) --- */
 .stat-card-premium {
   background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%) !important;
-  border: 1px solid rgba(226, 232, 240, 0.8) !important;
-  box-shadow: 0 8px 20px -8px rgba(15, 23, 42, 0.05) !important;
+  border: 1px solid rgba(203, 213, 225, 0.8) !important;
+  box-shadow: 0 8px 20px -8px rgba(15, 23, 42, 0.08) !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
   border-radius: 20px !important;
 }
+
+/* Force dark readable text in Light Mode */
+.stat-card-premium h3,
+.stat-card-premium .stat-number,
+.stat-card-premium [class*="text-2xl"],
+.stat-card-premium [class*="text-3xl"] {
+  color: #0f172a !important;
+}
+
+.stat-card-premium p,
+.stat-card-premium .stat-label {
+  color: #334155 !important;
+}
+
 .stat-card-premium:hover {
   transform: translateY(-4px);
-  box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.06), 0 10px 10px -5px rgba(15, 23, 42, 0.02) !important;
-  border-color: rgba(11, 46, 89, 0.2) !important;
+  box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.08), 0 10px 10px -5px rgba(15, 23, 42, 0.04) !important;
+  border-color: rgba(11, 46, 89, 0.3) !important;
 }
 
 /* Custom left-border color accents and shadow glow for each KPI card in Light Mode */
 .stat-card-premium-students {
-  box-shadow: 0 8px 24px -10px rgba(59, 130, 246, 0.15) !important;
+  box-shadow: 0 8px 24px -10px rgba(59, 130, 246, 0.2) !important;
 }
 .stat-card-premium-students::after {
   content: '';
@@ -709,12 +723,12 @@ main.bg-gray-50,
   background-color: #3b82f6;
 }
 .stat-card-premium-students:hover {
-  border-color: rgba(59, 130, 246, 0.3) !important;
-  box-shadow: 0 16px 30px -10px rgba(59, 130, 246, 0.22) !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+  box-shadow: 0 16px 30px -10px rgba(59, 130, 246, 0.25) !important;
 }
 
 .stat-card-premium-teachers {
-  box-shadow: 0 8px 24px -10px rgba(25, 195, 125, 0.15) !important;
+  box-shadow: 0 8px 24px -10px rgba(25, 195, 125, 0.2) !important;
 }
 .stat-card-premium-teachers::after {
   content: '';
@@ -726,12 +740,12 @@ main.bg-gray-50,
   background-color: #19C37D;
 }
 .stat-card-premium-teachers:hover {
-  border-color: rgba(25, 195, 125, 0.3) !important;
-  box-shadow: 0 16px 30px -10px rgba(25, 195, 125, 0.22) !important;
+  border-color: rgba(25, 195, 125, 0.4) !important;
+  box-shadow: 0 16px 30px -10px rgba(25, 195, 125, 0.25) !important;
 }
 
 .stat-card-premium-parents {
-  box-shadow: 0 8px 24px -10px rgba(212, 175, 55, 0.15) !important;
+  box-shadow: 0 8px 24px -10px rgba(212, 175, 55, 0.2) !important;
 }
 .stat-card-premium-parents::after {
   content: '';
@@ -743,12 +757,12 @@ main.bg-gray-50,
   background-color: #D4AF37;
 }
 .stat-card-premium-parents:hover {
-  border-color: rgba(212, 175, 55, 0.3) !important;
-  box-shadow: 0 16px 30px -10px rgba(212, 175, 55, 0.22) !important;
+  border-color: rgba(212, 175, 55, 0.4) !important;
+  box-shadow: 0 16px 30px -10px rgba(212, 175, 55, 0.25) !important;
 }
 
 .stat-card-premium-classes {
-  box-shadow: 0 8px 24px -10px rgba(129, 140, 248, 0.15) !important;
+  box-shadow: 0 8px 24px -10px rgba(129, 140, 248, 0.2) !important;
 }
 .stat-card-premium-classes::after {
   content: '';
@@ -760,17 +774,27 @@ main.bg-gray-50,
   background-color: #818cf8;
 }
 .stat-card-premium-classes:hover {
-  border-color: rgba(129, 140, 248, 0.3) !important;
-  box-shadow: 0 16px 30px -10px rgba(129, 140, 248, 0.22) !important;
+  border-color: rgba(129, 140, 248, 0.4) !important;
+  box-shadow: 0 16px 30px -10px rgba(129, 140, 248, 0.25) !important;
 }
 
 [data-theme="dark"] .stat-card-premium {
-  background-color: #102642 !important;
+  background: #102642 !important;
   border-color: #142F4D !important;
   box-shadow: 0 10px 25px -10px rgba(7, 26, 51, 0.5) !important;
 }
+[data-theme="dark"] .stat-card-premium h3,
+[data-theme="dark"] .stat-card-premium .stat-number,
+[data-theme="dark"] .stat-card-premium [class*="text-2xl"],
+[data-theme="dark"] .stat-card-premium [class*="text-3xl"] {
+  color: #ffffff !important;
+}
+[data-theme="dark"] .stat-card-premium p,
+[data-theme="dark"] .stat-card-premium .stat-label {
+  color: #cbd5e1 !important;
+}
 [data-theme="dark"] .stat-card-premium:hover {
-  background-color: #142F4D !important;
+  background: #142F4D !important;
   border-color: #19C37D !important;
 }
 [data-theme="dark"] .stat-card-premium::after {

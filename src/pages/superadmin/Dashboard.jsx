@@ -124,16 +124,16 @@ const Dashboard = () => {
             {statCards.map((stat, idx) => (
               <div 
                 key={idx} 
-                className={`stat-card-premium ${stat.cardClass} bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-100 dark:border-slate-800/80 flex flex-col justify-between`}
+                className={`stat-card-premium ${stat.cardClass} bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col justify-between`}
               >
                 <div className="flex justify-between items-start mb-3 sm:mb-4">
-                  <div className={`p-2 sm:p-2.5 rounded-xl ${stat.bg} shadow-sm inline-flex`}>
+                  <div className={`p-2.5 rounded-xl ${stat.bg} shadow-sm inline-flex border border-slate-200/60 dark:border-slate-700`}>
                     {stat.icon}
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-slate-100 mb-1">{stat.value}</h3>
-                  <p className="text-[10px] sm:text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider sm:tracking-widest">{stat.title}</p>
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mb-1">{stat.value}</h3>
+                  <p className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">{stat.title}</p>
                 </div>
               </div>
             ))}
